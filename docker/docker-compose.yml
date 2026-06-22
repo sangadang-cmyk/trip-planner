@@ -1,0 +1,27 @@
+name: Trip planner Docker Compose
+
+services:
+  database:
+    image: postgres:18.4
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mydb || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always 
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql
+    networks:
+      - trip-planner-network
+      
+volumes:
+  db_data:
+networks:
+  trip-planner-network:
+    driver: bridge
