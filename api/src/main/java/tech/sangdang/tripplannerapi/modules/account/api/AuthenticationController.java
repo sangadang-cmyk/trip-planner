@@ -26,8 +26,14 @@ public class AuthenticationController implements AuthenticationApi {
     private final AuthenticationService authenticationService;
 
     @Override
-    public ResponseEntity<LoginResponse> authLoginPost(LoginRequest loginRequest) {
-        LoginResponse response = authenticationService.login(loginRequest);
+    public ResponseEntity<LoginResponse> authUserLoginPost(LoginRequest loginRequest) {
+        LoginResponse response = authenticationService.loginUser(loginRequest);
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<LoginResponse> authAdminLoginPost(LoginRequest loginRequest) {
+        LoginResponse response = authenticationService.loginAdmin(loginRequest);
         return ResponseEntity.ok(response);
     }
 

@@ -16,6 +16,7 @@ import org.openapitools.model.ResendVerificationResponse;
 import org.openapitools.model.VerifyEmailRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import tech.sangdang.tripplannerapi.common.core.ForbiddenException;
 import tech.sangdang.tripplannerapi.common.core.ResendTooSoonException;
 import tech.sangdang.tripplannerapi.config.properties.PendingRegistrationProperties;
 import tech.sangdang.tripplannerapi.modules.account.app.AccessTokenService;
@@ -48,8 +49,29 @@ public class AuthenticationServiceImpl implements AuthenticationService {
   private final SecureRandom secureRandom = new SecureRandom();
 
   @Override
-  public LoginResponse login(LoginRequest loginRequest) {
-    var account =
+  public LoginResponse loginUser(LoginRequest loginRequest) {
+    AccountEntity account = authenticateCredentials(loginRequest);
+
+    if (account.getRole() != Role.USER) {
+      throw new ForbiddenException("Account is not a user");
+    }
+
+    return buildLoginResponse(account);
+  }
+
+  @Override
+  public LoginResponse loginAdmin(LoginRequest loginRequest) {
+    AccountEntity account = authenticateCredentials(loginRequest);
+
+    if (account.getRole() != Role.ADMIN) {
+      throw new ForbiddenException("Account is not an admin");
+    }
+
+    return buildLoginResponse(account);
+  }
+
+  private AccountEntity authenticateCredentials(LoginRequest loginRequest) {
+    AccountEntity account =
         accountRepository
             .findByEmail(loginRequest.getEmail())
             .orElseThrow(InvalidCredentialsException::new);
@@ -58,8 +80,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
       throw new InvalidCredentialsException();
     }
 
-    String accessToken = accessTokenService.generateAccessToken(account);
+    return account;
+  }
 
+  private LoginResponse buildLoginResponse(AccountEntity account) {
+    String accessToken = accessTokenService.generateAccessToken(account);
     return LoginResponse.builder().accessToken(accessToken).build();
   }
 

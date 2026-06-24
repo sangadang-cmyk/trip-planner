@@ -10,7 +10,9 @@ import org.openapitools.model.ResendVerificationResponse;
 import org.openapitools.model.VerifyEmailRequest;
 
 public interface AuthenticationService {
-  LoginResponse login(LoginRequest loginRequest);
+  LoginResponse loginUser(LoginRequest loginRequest);
+
+  LoginResponse loginAdmin(LoginRequest loginRequest);
 
   RegisterResponse register(RegisterRequest registerRequest);
 

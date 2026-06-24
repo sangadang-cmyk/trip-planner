@@ -61,9 +61,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /auth/login:
+  /auth/user/login:
     post:
-      summary: Login with email and password
+      summary: Login as a user
       tags:
         - Authentication
       requestBody:
@@ -85,7 +85,49 @@ paths:
                 type: string
                 example: refreshToken=xyz; HttpOnly; Path=/; Max-Age=604800
         '401':
-          description: Invalid credentials or email not verified
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Account is not a user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/admin/login:
+    post:
+      summary: Login as an admin
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: refreshToken=xyz; HttpOnly; Path=/; Max-Age=604800
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Account is not an admin
           content:
             application/json:
               schema:
