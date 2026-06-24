@@ -3,13 +3,17 @@ package tech.sangdang.tripplannerapi.modules.account.infra;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import tech.sangdang.tripplannerapi.config.properties.PendingRegistrationProperties;
 import tech.sangdang.tripplannerapi.modules.account.domain.PendingRegistration;
 import tech.sangdang.tripplannerapi.modules.account.domain.exception.PendingRegistrationExpiredException;
 import tech.sangdang.tripplannerapi.modules.account.domain.port.PendingRegistrationStore;
 
 @Component
+@RequiredArgsConstructor
 public class InMemoryPendingRegistrationStore implements PendingRegistrationStore {
+  private final PendingRegistrationProperties pendingRegistrationProperties;
   private final ConcurrentHashMap<String, PendingRegistration> registrationsByEmail =
       new ConcurrentHashMap<>();
 
@@ -47,6 +51,11 @@ public class InMemoryPendingRegistrationStore implements PendingRegistrationStor
   }
 
   @Override
+  public Optional<PendingRegistration> findByEmailRaw(String email) {
+    return Optional.ofNullable(registrationsByEmail.get(normalizeEmail(email)));
+  }
+
+  @Override
   public void removeByEmail(String email) {
     registrationsByEmail.remove(normalizeEmail(email));
   }
@@ -56,7 +65,13 @@ public class InMemoryPendingRegistrationStore implements PendingRegistrationStor
     LocalDateTime now = LocalDateTime.now();
     registrationsByEmail
         .entrySet()
-        .removeIf(entry -> entry.getValue().isExpired(now));
+        .removeIf(
+            entry ->
+                now.isAfter(
+                    entry
+                        .getValue()
+                        .getExpiresAt()
+                        .plus(pendingRegistrationProperties.resendGraceAfterExpiry())));
   }
 
   private String normalizeEmail(String email) {

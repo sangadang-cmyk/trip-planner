@@ -24,6 +24,8 @@ app:
     pending-registration:
       expiration: 30m
       cleanup-cron: "0 0 */12 * * *"
+      resend-allowed-before-expiry: 10s
+      resend-grace-after-expiry: 10m
   security:
     jwt:
       secret: ${ACCESS_TOKEN_SECRET}

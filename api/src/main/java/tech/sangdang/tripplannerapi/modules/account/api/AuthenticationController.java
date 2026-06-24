@@ -5,11 +5,11 @@ import org.openapitools.api.AuthenticationApi;
 import org.openapitools.model.AccountResponse;
 import org.openapitools.model.AuthRefreshPost200Response;
 import org.openapitools.model.AuthRefreshPostRequest;
-import org.openapitools.model.AuthResendVerificationPost200Response;
-import org.openapitools.model.AuthResendVerificationPostRequest;
 import org.openapitools.model.LoginRequest;
 import org.openapitools.model.LoginResponse;
 import org.openapitools.model.RegisterRequest;import org.openapitools.model.RegisterResponse;
+import org.openapitools.model.ResendVerificationRequest;
+import org.openapitools.model.ResendVerificationResponse;
 import org.openapitools.model.VerifyEmailRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,8 +43,11 @@ public class AuthenticationController implements AuthenticationApi {
     }
 
     @Override
-    public ResponseEntity<AuthResendVerificationPost200Response> authResendVerificationPost(AuthResendVerificationPostRequest authResendVerificationPostRequest) {
-        return AuthenticationApi.super.authResendVerificationPost(authResendVerificationPostRequest);
+    public ResponseEntity<ResendVerificationResponse> authResendVerificationPost(
+        ResendVerificationRequest resendVerificationRequest) {
+        ResendVerificationResponse response =
+            authenticationService.resendVerification(resendVerificationRequest);
+        return ResponseEntity.ok(response);
     }
 
     @Override

@@ -5,6 +5,8 @@ import org.openapitools.model.LoginRequest;
 import org.openapitools.model.LoginResponse;
 import org.openapitools.model.RegisterRequest;
 import org.openapitools.model.RegisterResponse;
+import org.openapitools.model.ResendVerificationRequest;
+import org.openapitools.model.ResendVerificationResponse;
 import org.openapitools.model.VerifyEmailRequest;
 
 public interface AuthenticationService {
@@ -13,4 +15,6 @@ public interface AuthenticationService {
   RegisterResponse register(RegisterRequest registerRequest);
 
   AccountResponse verifyEmail(VerifyEmailRequest verifyEmailRequest);
+
+  ResendVerificationResponse resendVerification(ResendVerificationRequest request);
 }

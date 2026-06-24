@@ -11,9 +11,12 @@ import org.openapitools.model.LoginRequest;
 import org.openapitools.model.LoginResponse;
 import org.openapitools.model.RegisterRequest;
 import org.openapitools.model.RegisterResponse;
+import org.openapitools.model.ResendVerificationRequest;
+import org.openapitools.model.ResendVerificationResponse;
 import org.openapitools.model.VerifyEmailRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import tech.sangdang.tripplannerapi.common.core.ResendTooSoonException;
 import tech.sangdang.tripplannerapi.config.properties.PendingRegistrationProperties;
 import tech.sangdang.tripplannerapi.modules.account.app.AccessTokenService;
 import tech.sangdang.tripplannerapi.modules.account.app.AuthenticationService;
@@ -24,6 +27,7 @@ import tech.sangdang.tripplannerapi.modules.account.domain.exception.EmailAlread
 import tech.sangdang.tripplannerapi.modules.account.domain.exception.InvalidCredentialsException;
 import tech.sangdang.tripplannerapi.modules.account.domain.exception.InvalidRegistrationChallengeException;
 import tech.sangdang.tripplannerapi.modules.account.domain.exception.InvalidVerificationCodeException;
+import tech.sangdang.tripplannerapi.modules.account.domain.exception.PendingRegistrationExpiredException;
 import tech.sangdang.tripplannerapi.modules.account.domain.exception.PendingRegistrationNotFoundException;
 import tech.sangdang.tripplannerapi.modules.account.domain.port.PendingRegistrationStore;
 import tech.sangdang.tripplannerapi.modules.account.domain.port.VerificationEmailService;
@@ -84,12 +88,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     pendingRegistrationStore.save(pendingRegistration);
 
-    try {
-      verificationEmailService.sendVerificationEmail(normalizedEmail, verificationCode);
-    } catch (RuntimeException exception) {
-      pendingRegistrationStore.removeByEmail(normalizedEmail);
-      throw exception;
-    }
+    verificationEmailService.sendVerificationEmail(normalizedEmail, verificationCode);
 
     return RegisterResponse.builder().challenge(challenge).build();
   }
@@ -135,6 +134,62 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         .role(AccountResponse.RoleEnum.fromValue(account.getRole().name()))
         .createdAt(account.getCreatedDate().atOffset(ZoneOffset.UTC))
         .build();
+  }
+
+  @Override
+  public ResendVerificationResponse resendVerification(ResendVerificationRequest request) {
+    String normalizedEmail = request.getEmail().trim().toLowerCase();
+
+    if (accountRepository.findByEmail(normalizedEmail).isPresent()) {
+      throw new EmailAlreadyRegisteredException();
+    }
+
+    PendingRegistration pendingRegistration =
+        pendingRegistrationStore
+            .findByEmailRaw(normalizedEmail)
+            .orElseThrow(PendingRegistrationNotFoundException::new);
+
+    if (!Objects.equals(pendingRegistration.getChallenge(), request.getChallenge())) {
+      throw new InvalidRegistrationChallengeException();
+    }
+
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime earliestResend =
+        pendingRegistration
+            .getExpiresAt()
+            .minus(pendingRegistrationProperties.resendAllowedBeforeExpiry());
+    LocalDateTime latestResend =
+        pendingRegistration
+            .getExpiresAt()
+            .plus(pendingRegistrationProperties.resendGraceAfterExpiry());
+
+    if (now.isBefore(earliestResend)) {
+      throw new ResendTooSoonException();
+    }
+
+    if (now.isAfter(latestResend)) {
+      pendingRegistrationStore.removeByEmail(normalizedEmail);
+      throw new PendingRegistrationExpiredException();
+    }
+
+    String verificationCode = generateVerificationCode();
+    PendingRegistration updatedRegistration =
+        PendingRegistration.builder()
+            .email(pendingRegistration.getEmail())
+            .name(pendingRegistration.getName())
+            .hashedPassword(pendingRegistration.getHashedPassword())
+            .role(pendingRegistration.getRole())
+            .verificationCode(verificationCode)
+            .challenge(pendingRegistration.getChallenge())
+            .createdAt(pendingRegistration.getCreatedAt())
+            .expiresAt(now.plus(pendingRegistrationProperties.expiration()))
+            .build();
+
+    pendingRegistrationStore.save(updatedRegistration);
+
+    verificationEmailService.sendVerificationEmail(normalizedEmail, verificationCode);
+
+    return ResendVerificationResponse.builder().message("Verification email sent").build();
   }
 
   private String generateChallenge() {

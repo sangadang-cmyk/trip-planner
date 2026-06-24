@@ -10,6 +10,8 @@ public interface PendingRegistrationStore {
 
   Optional<PendingRegistration> findByEmail(String email);
 
+  Optional<PendingRegistration> findByEmailRaw(String email);
+
   void removeByEmail(String email);
 
   void removeExpired();

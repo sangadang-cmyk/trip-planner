@@ -128,6 +128,104 @@ paths:
                     type: string
                     example: Invalid or expired refresh token
 
+  /admin/accounts:
+    get:
+      summary: List all accounts (paginated)
+      tags:
+        - Account Management
+      parameters:
+        - name: page
+          in: query
+          description: Zero-based page index
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          description: Number of accounts per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Paginated list of accounts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAccountsResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/accounts/{id}:
+    get:
+      summary: Get account details by ID
+      tags:
+        - Account Management
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Account details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /private/account/me:
+    get:
+      summary: Get current authenticated account
+      tags:
+        - Account Management
+      responses:
+        '200':
+          description: Current account details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /auth/resend-verification:
     post:
       summary: Resend verification email
@@ -138,35 +236,26 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - email
-              properties:
-                email:
-                  type: string
-                  format: email
-                  example: user@example.com
+              $ref: '#/components/schemas/ResendVerificationRequest'
       responses:
         '200':
           description: Verification email sent
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Verification email sent
+                $ref: '#/components/schemas/ResendVerificationResponse'
+        '400':
+          description: Invalid request, pending registration not found, or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '429':
           description: Too many requests, please wait before resending
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Please wait 5 minutes before resending
+                $ref: '#/components/schemas/Error'
 
 components:
   schemas:
@@ -217,6 +306,29 @@ components:
           type: string
           example: 7f3c9a2e1b4d6f8a0c2e4b6d8f0a1c3e
 
+    ResendVerificationRequest:
+      type: object
+      required:
+        - email
+        - challenge
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        challenge:
+          type: string
+          example: 7f3c9a2e1b4d6f8a0c2e4b6d8f0a1c3e
+
+    ResendVerificationResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: Verification email sent
+
     LoginRequest:
       type: object
       required:
@@ -261,6 +373,33 @@ components:
         createdAt:
           type: string
           format: date-time
+
+    PaginatedAccountsResponse:
+      type: object
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountResponse'
+        page:
+          type: integer
+          example: 0
+        size:
+          type: integer
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          example: 42
+        totalPages:
+          type: integer
+          example: 3
 
     Error:
       type: object

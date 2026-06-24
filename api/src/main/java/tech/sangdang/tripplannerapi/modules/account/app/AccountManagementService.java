@@ -1,3 +1,11 @@
 package tech.sangdang.tripplannerapi.modules.account.app;
 
-public interface AccountManagementService {}
+import java.util.UUID;
+import org.openapitools.model.AccountResponse;
+import org.openapitools.model.PaginatedAccountsResponse;
+
+public interface AccountManagementService {
+  PaginatedAccountsResponse getAccounts(int page, int size);
+
+  AccountResponse getAccountById(UUID id);
+}
