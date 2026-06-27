@@ -4,6 +4,10 @@ import { isAuthenticated } from '@/lib/auth'
 
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: () => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
     if (!isAuthenticated()) {
       throw redirect({ to: '/' })
     }

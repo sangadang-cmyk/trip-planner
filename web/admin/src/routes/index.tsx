@@ -17,6 +17,10 @@ import { isAuthenticated, setAccessToken } from '@/lib/auth'
 
 export const Route = createFileRoute('/')({
   beforeLoad: () => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
     if (isAuthenticated()) {
       throw redirect({ to: '/dashboard' })
     }
