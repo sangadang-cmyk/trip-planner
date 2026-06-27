@@ -48,12 +48,12 @@
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
 
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<scope>runtime</scope>
-			<optional>true</optional>
-		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>org.springframework.boot</groupId>-->
+<!--			<artifactId>spring-boot-devtools</artifactId>-->
+<!--			<scope>runtime</scope>-->
+<!--			<optional>true</optional>-->
+<!--		</dependency>-->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
@@ -193,6 +193,22 @@
 					</execution>
 				</executions>
 			</plugin>
+<!--			<plugin>-->
+<!--				<groupId>com.google.googlejavaformat</groupId>-->
+<!--				<artifactId>google-java-format</artifactId>-->
+<!--				<version>1.35.0</version> &lt;!&ndash; Use the latest version available &ndash;&gt;-->
+<!--				<executions>-->
+<!--					<execution>-->
+<!--						<goals>-->
+<!--							<goal>format</goal> &lt;!&ndash; This goal auto-formats your code &ndash;&gt;-->
+<!--						</goals>-->
+<!--					</execution>-->
+<!--				</executions>-->
+<!--				<configuration>-->
+<!--					<source>25</source> &lt;!&ndash; Set the Java source version &ndash;&gt;-->
+<!--					<target>25</target> &lt;!&ndash; Set the Java target version &ndash;&gt;-->
+<!--				</configuration>-->
+<!--			</plugin>-->
 		</plugins>
 	</build>
 

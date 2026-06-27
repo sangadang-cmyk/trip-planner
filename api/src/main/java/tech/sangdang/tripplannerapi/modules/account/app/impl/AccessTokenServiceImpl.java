@@ -1,6 +1,8 @@
 package tech.sangdang.tripplannerapi.modules.account.app.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
@@ -28,6 +30,9 @@ public class AccessTokenServiceImpl implements AccessTokenService {
             .claim("role", account.getRole().name())
             .build();
 
-    return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+    return jwtEncoder
+        .encode(
+            JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
+        .getTokenValue();
   }
 }
