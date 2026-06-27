@@ -102,6 +102,11 @@
 			<artifactId>jackson-databind-nullable</artifactId>
 			<version>0.2.6</version>
 		</dependency>
+		<dependency>
+			<groupId>io.hypersistence</groupId>
+			<artifactId>hypersistence-utils-hibernate-73</artifactId>
+			<version>3.15.3</version>
+		</dependency>
 	</dependencies>
 
 	<build>
