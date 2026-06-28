@@ -58,6 +58,12 @@ public class LocationEntity {
   @Column(nullable = false, name = "country_id")
   private UUID countryId;
 
+  @Column(nullable = true, name = "city_display_name")
+  private String cityDisplayName;
+
+  @Column(nullable = true, name = "country_display_name")
+  private String countryDisplayName;
+
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, name = "source", length = 50)
   private LocationSource source;

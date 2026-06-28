@@ -13,6 +13,7 @@ import tech.sangdang.tripplannerapi.common.core.NotFoundException;
 import tech.sangdang.tripplannerapi.modules.location.app.LocationManagementService;
 import tech.sangdang.tripplannerapi.modules.location.app.mapper.LocationMapper;
 import tech.sangdang.tripplannerapi.modules.location.domain.CityEntity;
+import tech.sangdang.tripplannerapi.modules.location.domain.CountryEntity;
 import tech.sangdang.tripplannerapi.modules.location.domain.LocationEntity;
 import tech.sangdang.tripplannerapi.modules.location.domain.LocationSource;
 import tech.sangdang.tripplannerapi.modules.location.domain.repository.CityRepository;
@@ -52,9 +53,10 @@ public class LocationManagementServiceImpl implements LocationManagementService 
 
   @Override
   public LocationResponse createManualLocation(CreateManualLocationRequest request, UUID addedBy) {
-    if (!countryRepository.existsById(request.getCountryId())) {
-      throw new NotFoundException("Country not found");
-    }
+    CountryEntity country =
+        countryRepository
+            .findById(request.getCountryId())
+            .orElseThrow(() -> new NotFoundException("Country not found"));
 
     CityEntity city =
         cityRepository
@@ -70,6 +72,8 @@ public class LocationManagementServiceImpl implements LocationManagementService 
             .name(request.getName())
             .cityId(request.getCityId())
             .countryId(request.getCountryId())
+            .cityDisplayName(city.getName()) // Denormalized field
+            .countryDisplayName(country.getName()) // Denormalized field
             .source(LocationSource.MANUAL)
             .addedBy(addedBy.toString())
             .images(locationMapper.toImageArray(request.getImages()))

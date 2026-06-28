@@ -16,6 +16,8 @@ public class LocationMapper {
         .name(location.getName())
         .cityId(location.getCityId())
         .countryId(location.getCountryId())
+        .cityDisplayName(location.getCityDisplayName())
+        .countryDisplayName(location.getCountryDisplayName())
         .source(LocationResponse.SourceEnum.fromValue(location.getSource().name()))
         .googleMapsId(location.getGoogleMapsId())
         .addedBy(location.getAddedBy())
