@@ -29,6 +29,7 @@
 	<properties>
 		<java.version>25</java.version>
 		<openapi-generator.version>7.21.0</openapi-generator.version>
+		<hypersistence.version>3.15.3</hypersistence.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -105,7 +106,7 @@
 		<dependency>
 			<groupId>io.hypersistence</groupId>
 			<artifactId>hypersistence-utils-hibernate-73</artifactId>
-			<version>3.15.3</version>
+			<version>${hypersistence.version}</version>
 		</dependency>
 	</dependencies>
 

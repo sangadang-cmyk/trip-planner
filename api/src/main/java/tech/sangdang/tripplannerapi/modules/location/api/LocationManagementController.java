@@ -1,9 +1,11 @@
 package tech.sangdang.tripplannerapi.modules.location.api;
 
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.openapitools.api.LocationManagementApi;
 import org.openapitools.model.CreateManualLocationRequest;
 import org.openapitools.model.LocationResponse;
+import org.openapitools.model.PaginatedLocationsResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,6 +17,18 @@ import tech.sangdang.tripplannerapi.modules.location.app.LocationManagementServi
 @RequiredArgsConstructor
 public class LocationManagementController implements LocationManagementApi {
   private final LocationManagementService locationManagementService;
+
+  @Override
+  public ResponseEntity<PaginatedLocationsResponse> adminLocationsGet(Integer page, Integer size) {
+    PaginatedLocationsResponse response = locationManagementService.getLocations(page, size);
+    return ResponseEntity.ok(response);
+  }
+
+  @Override
+  public ResponseEntity<LocationResponse> adminLocationsIdGet(UUID id) {
+    LocationResponse response = locationManagementService.getLocationById(id);
+    return ResponseEntity.ok(response);
+  }
 
   @Override
   public ResponseEntity<LocationResponse> adminLocationsManualPost(

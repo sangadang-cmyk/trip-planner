@@ -1,16 +1,17 @@
 package tech.sangdang.tripplannerapi.modules.location.app.impl;
 
-import java.time.ZoneOffset;
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.openapitools.model.CreateManualLocationRequest;
 import org.openapitools.model.LocationResponse;
+import org.openapitools.model.PaginatedLocationsResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import tech.sangdang.tripplannerapi.common.core.BadRequestException;
 import tech.sangdang.tripplannerapi.common.core.NotFoundException;
 import tech.sangdang.tripplannerapi.modules.location.app.LocationManagementService;
+import tech.sangdang.tripplannerapi.modules.location.app.mapper.LocationMapper;
 import tech.sangdang.tripplannerapi.modules.location.domain.CityEntity;
 import tech.sangdang.tripplannerapi.modules.location.domain.LocationEntity;
 import tech.sangdang.tripplannerapi.modules.location.domain.LocationSource;
@@ -24,6 +25,30 @@ public class LocationManagementServiceImpl implements LocationManagementService 
   private final LocationRepository locationRepository;
   private final CityRepository cityRepository;
   private final CountryRepository countryRepository;
+  private final LocationMapper locationMapper;
+
+  @Override
+  public PaginatedLocationsResponse getLocations(int page, int size) {
+    Page<LocationEntity> locationPage =
+        locationRepository.findAll(PageRequest.of(page, size));
+
+    return PaginatedLocationsResponse.builder()
+        .content(locationPage.getContent().stream().map(locationMapper::toResponse).toList())
+        .page(locationPage.getNumber())
+        .size(locationPage.getSize())
+        .totalElements(locationPage.getTotalElements())
+        .totalPages(locationPage.getTotalPages())
+        .build();
+  }
+
+  @Override
+  public LocationResponse getLocationById(UUID id) {
+    LocationEntity location =
+        locationRepository
+            .findById(id)
+            .orElseThrow(() -> new NotFoundException("Location not found"));
+    return locationMapper.toResponse(location);
+  }
 
   @Override
   public LocationResponse createManualLocation(CreateManualLocationRequest request, UUID addedBy) {
@@ -47,35 +72,9 @@ public class LocationManagementServiceImpl implements LocationManagementService 
             .countryId(request.getCountryId())
             .source(LocationSource.MANUAL)
             .addedBy(addedBy.toString())
-            .images(toImageArray(request.getImages()))
+            .images(locationMapper.toImageArray(request.getImages()))
             .build();
 
-    return toLocationResponse(locationRepository.save(location));
-  }
-
-  private LocationResponse toLocationResponse(LocationEntity location) {
-    return LocationResponse.builder()
-        .id(location.getId())
-        .name(location.getName())
-        .cityId(location.getCityId())
-        .countryId(location.getCountryId())
-        .source(LocationResponse.SourceEnum.fromValue(location.getSource().name()))
-        .googleMapsId(location.getGoogleMapsId())
-        .addedBy(location.getAddedBy())
-        .images(toImageList(location.getImages()))
-        .createdAt(location.getCreatedDate().atOffset(ZoneOffset.UTC))
-        .updatedAt(location.getLastModifiedDate().atOffset(ZoneOffset.UTC))
-        .build();
-  }
-
-  private List<String> toImageList(String[] images) {
-    return images == null ? List.of() : Arrays.asList(images);
-  }
-
-  private String[] toImageArray(List<String> images) {
-    if (images == null || images.isEmpty()) {
-      return new String[0];
-    }
-    return images.toArray(String[]::new);
+    return locationMapper.toResponse(locationRepository.save(location));
   }
 }
