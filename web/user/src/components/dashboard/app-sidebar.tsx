@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { GlobeIcon, LayoutDashboardIcon, MapPinIcon, MapPinnedIcon, UsersIcon } from 'lucide-react'
+import { MapIcon, MapPinIcon, PlaneIcon } from 'lucide-react'
 
 import { NavMain } from '@/components/dashboard/nav-main'
 import { NavUser } from '@/components/dashboard/nav-user'
@@ -15,24 +15,14 @@ import {
 
 const navItems = [
   {
-    title: 'Dashboard',
-    to: '/dashboard' as const,
-    icon: LayoutDashboardIcon,
+    title: 'Map',
+    to: '/' as const,
+    icon: MapIcon,
   },
   {
-    title: 'Accounts',
-    to: '/dashboard/accounts' as const,
-    icon: UsersIcon,
-  },
-  {
-    title: 'Geolocation',
-    to: '/dashboard/geolocation' as const,
-    icon: GlobeIcon,
-  },
-  {
-    title: 'Locations',
-    to: '/dashboard/locations' as const,
-    icon: MapPinnedIcon,
+    title: 'Trips',
+    to: '/trips' as const,
+    icon: PlaneIcon,
   },
 ]
 
@@ -42,11 +32,11 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
+        <SidebarMenu className="px-2">
           <SidebarMenuItem>
             <SidebarMenuButton
               className="data-[slot=sidebar-menu-button]:p-1.5!"
-              render={<Link to="/dashboard" />}
+              render={<Link to="/" />}
             >
               <MapPinIcon className="size-5!" />
               <span className="text-base font-semibold">Trip Planner</span>

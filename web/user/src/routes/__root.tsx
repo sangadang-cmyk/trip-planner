@@ -3,6 +3,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 
+import { Toaster } from '@/components/ui/sonner'
 import '@/lib/api-client'
 import appCss from '../styles.css?url'
 
@@ -17,7 +18,7 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'Trip Planner Admin',
+        title: 'Trip Planner',
       },
     ],
     links: [
@@ -52,7 +53,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               },
             ]}
           /> */}
-          <ReactQueryDevtools />
+          <ReactQueryDevtools buttonPosition='top-right' />
+          <Toaster richColors closeButton position="top-right" />
           <Scripts />
         </body>
       </QueryClientProvider>

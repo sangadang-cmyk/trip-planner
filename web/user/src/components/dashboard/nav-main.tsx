@@ -11,7 +11,7 @@ import {
 
 type NavItem = {
   title: string
-  to: '/dashboard' | '/dashboard/accounts' | '/dashboard/geolocation' | '/dashboard/locations'
+  to: '/' | '/trips'
   icon: LucideIcon
 }
 
@@ -24,9 +24,9 @@ export function NavMain({ items }: { items: NavItem[] }) {
         <SidebarMenu>
           {items.map((item) => {
             const isActive =
-              item.to === '/dashboard'
-                ? pathname === '/dashboard' || pathname === '/dashboard/'
-                : pathname === item.to
+              item.to === '/'
+                ? pathname === '/' || pathname === ''
+                : pathname === item.to || pathname.startsWith(`${item.to}/`)
 
             return (
               <SidebarMenuItem key={item.to}>
