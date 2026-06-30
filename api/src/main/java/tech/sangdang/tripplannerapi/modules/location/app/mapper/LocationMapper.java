@@ -1,11 +1,12 @@
 package tech.sangdang.tripplannerapi.modules.location.app.mapper;
 
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Arrays;
-import java.util.List;
 import org.openapitools.model.LocationResponse;
 import org.springframework.stereotype.Component;
 import tech.sangdang.tripplannerapi.modules.location.domain.LocationEntity;
+import tech.sangdang.tripplannerapi.modules.location.domain.LocationSource;
+import tech.sangdang.tripplannerapi.modules.location.domain.opentripmap.OpenTripMapSimpleFeature;
 
 @Component
 public class LocationMapper {
@@ -14,27 +15,28 @@ public class LocationMapper {
     return LocationResponse.builder()
         .id(location.getId())
         .name(location.getName())
-        .cityId(location.getCityId())
-        .countryId(location.getCountryId())
-        .cityDisplayName(location.getCityDisplayName())
-        .countryDisplayName(location.getCountryDisplayName())
+        .latitude(location.getLatitude())
+        .longitude(location.getLongitude())
+        .popularity(location.getPopularity())
         .source(LocationResponse.SourceEnum.fromValue(location.getSource().name()))
-        .googleMapsId(location.getGoogleMapsId())
+        .googleMapsId(location.getSourceId())
         .addedBy(location.getAddedBy())
-        .images(toImageList(location.getImages()))
         .createdAt(location.getCreatedDate().atOffset(ZoneOffset.UTC))
         .updatedAt(location.getLastModifiedDate().atOffset(ZoneOffset.UTC))
         .build();
   }
 
-  public String[] toImageArray(List<String> images) {
-    if (images == null || images.isEmpty()) {
-      return new String[0];
-    }
-    return images.toArray(String[]::new);
-  }
-
-  private List<String> toImageList(String[] images) {
-    return images == null ? List.of() : Arrays.asList(images);
+  public LocationResponse fromOpenTripMapFeature(OpenTripMapSimpleFeature place) {
+    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+    return LocationResponse.builder()
+        .name(place.name())
+        .latitude(place.point() != null ? place.point().lat() : null)
+        .longitude(place.point() != null ? place.point().lon() : null)
+        .popularity(0)
+        .source(LocationResponse.SourceEnum.fromValue(LocationSource.OPENTRIPMAPS.name()))
+        .googleMapsId(place.xid())
+        .createdAt(now)
+        .updatedAt(now)
+        .build();
   }
 }

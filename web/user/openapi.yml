@@ -707,6 +707,382 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /user/locations/bounding-box:
+    post:
+      summary: Fetch locations within a bounding box
+      tags:
+        - Locations
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoundingBoxRequest'
+      responses:
+        '200':
+          description: Locations within the bounding box
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocationResponse'
+        '400':
+          description: Invalid bounding box
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/trips:
+    get:
+      summary: List all trips for the current user
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of trips owned by the current user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a trip
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTripRequest'
+      responses:
+        '201':
+          description: Trip created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/trips/{id}:
+    get:
+      summary: Get a trip by ID
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Trip details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a trip
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTripRequest'
+      responses:
+        '200':
+          description: Trip updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/trips/{tripId}/destinations:
+    get:
+      summary: List destinations for a trip
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of destinations for the trip
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripDestinationResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Add a destination to a trip
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTripDestinationRequest'
+      responses:
+        '201':
+          description: Trip destination created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripDestinationResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trip or location not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/trips/{tripId}/destinations/{destinationId}:
+    put:
+      summary: Update a trip destination
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: destinationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTripDestinationRequest'
+      responses:
+        '200':
+          description: Trip destination updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripDestinationResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trip or destination not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a trip destination
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: destinationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Trip destination deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trip or destination not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /private/account/me:
     get:
       summary: Get current authenticated account
@@ -1077,10 +1453,8 @@ components:
       required:
         - id
         - name
-        - cityId
-        - countryId
+        - popularity
         - source
-        - images
         - createdAt
         - updatedAt
       properties:
@@ -1089,27 +1463,21 @@ components:
           format: uuid
         name:
           type: string
-        cityId:
-          type: string
-          format: uuid
-        countryId:
-          type: string
-          format: uuid
-        cityDisplayName:
-          type: string
-        countryDisplayName:
-          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        popularity:
+          type: integer
         source:
           type: string
-          enum: [GOOGLE_MAPS, MANUAL]
+          enum: [OPENTRIPMAPS, MANUAL]
         googleMapsId:
           type: string
         addedBy:
           type: string
-        images:
-          type: array
-          items:
-            type: string
         createdAt:
           type: string
           format: date-time
@@ -1121,21 +1489,168 @@ components:
       type: object
       required:
         - name
-        - cityId
-        - countryId
       properties:
         name:
           type: string
-        cityId:
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        popularity:
+          type: integer
+
+    BoundingBoxRequest:
+      type: object
+      required:
+        - minLat
+        - maxLat
+        - minLng
+        - maxLng
+      properties:
+        minLat:
+          type: number
+          format: double
+        maxLat:
+          type: number
+          format: double
+        minLng:
+          type: number
+          format: double
+        maxLng:
+          type: number
+          format: double
+
+    CreateTripRequest:
+      type: object
+      required:
+        - name
+        - startDate
+        - endDate
+      properties:
+        name:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        notes:
+          type: string
+
+    UpdateTripRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        notes:
+          type: string
+
+    TripResponse:
+      type: object
+      required:
+        - id
+        - userId
+        - name
+        - startDate
+        - endDate
+        - createdAt
+        - updatedAt
+      properties:
+        id:
           type: string
           format: uuid
-        countryId:
+        userId:
           type: string
           format: uuid
-        images:
-          type: array
-          items:
-            type: string
+        name:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateTripDestinationRequest:
+      type: object
+      required:
+        - locationId
+        - dayNumber
+        - sortOrder
+      properties:
+        locationId:
+          type: string
+          format: uuid
+        dayNumber:
+          type: integer
+          minimum: 1
+        sortOrder:
+          type: integer
+          minimum: 0
+        notes:
+          type: string
+
+    UpdateTripDestinationRequest:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+          minimum: 1
+        sortOrder:
+          type: integer
+          minimum: 0
+        notes:
+          type: string
+
+    TripDestinationResponse:
+      type: object
+      required:
+        - id
+        - tripId
+        - locationId
+        - dayNumber
+        - sortOrder
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        tripId:
+          type: string
+          format: uuid
+        locationId:
+          type: string
+          format: uuid
+        dayNumber:
+          type: integer
+        sortOrder:
+          type: integer
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
     Error:
       type: object

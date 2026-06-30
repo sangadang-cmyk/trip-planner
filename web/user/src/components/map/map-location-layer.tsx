@@ -2,15 +2,16 @@ import { useMap } from 'react-leaflet'
 import { useEffect } from 'react'
 
 import { MapLocationMarkers } from '@/components/map/map-location-markers'
-import type { MockLocation } from '@/mocks/types'
+import type { LocationResponse } from '@/generated/api/types.gen'
+import { getMapLocationKey } from '@/lib/map-location'
 
 const SELECT_ZOOM = 16
 const FLY_DURATION_SECONDS = 1.2
 
 type MapLocationLayerProps = {
-  locations: MockLocation[]
+  locations: LocationResponse[]
   selectedId: string | null
-  onSelect: (location: MockLocation) => void
+  onSelect: (location: LocationResponse) => void
 }
 
 export function MapLocationLayer({
@@ -21,8 +22,10 @@ export function MapLocationLayer({
   const map = useMap()
 
   useEffect(() => {
-    const selected = locations.find((location) => location.id === selectedId)
-    if (!selected) {
+    const selected = locations.find(
+      (location) => getMapLocationKey(location) === selectedId,
+    )
+    if (!selected || selected.latitude == null || selected.longitude == null) {
       return
     }
 
@@ -32,15 +35,11 @@ export function MapLocationLayer({
     })
   }, [locations, map, selectedId])
 
-  function handleSelect(location: MockLocation) {
-    onSelect(location)
-  }
-
   return (
     <MapLocationMarkers
       locations={locations}
       selectedId={selectedId}
-      onSelect={handleSelect}
+      onSelect={onSelect}
     />
   )
 }

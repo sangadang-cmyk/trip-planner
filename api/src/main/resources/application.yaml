@@ -19,6 +19,10 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
+logging:
+  level:
+    tech.sangdang.tripplannerapi.config.RestClientLoggingInterceptor: DEBUG
+
 app:
   auth:
     pending-registration:
@@ -34,3 +38,6 @@ app:
       username: ${GMAIL_USERNAME}
       app-password: ${GMAIL_APP_PASSWORD}
       from: ${GMAIL_FROM}
+  opentripmap:
+    api-key: ${OPENTRIPMAP_API_KEY:dummy-key}
+    base-url: https://api.opentripmap.com/0.1

@@ -1,6 +1,5 @@
 package tech.sangdang.tripplannerapi.modules.location.domain;
 
-import io.hypersistence.utils.hibernate.type.array.StringArrayType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,7 +16,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Type;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
@@ -29,9 +27,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 @Table(
     name = LocationEntity.TABLE,
     indexes = {
-      @Index(name = "idx_location_city_id", columnList = "city_id"),
-      @Index(name = "idx_location_country_id", columnList = "country_id"),
-      @Index(name = "idx_location_google_maps_id", columnList = "google_maps_id", unique = true)
+      @Index(name = "idx_location_source_id", columnList = "source_id", unique = true)
     })
 @Entity
 public class LocationEntity {
@@ -52,30 +48,23 @@ public class LocationEntity {
   @Column(nullable = false, name = "name", length = 255)
   private String name;
 
-  @Column(nullable = false, name = "city_id")
-  private UUID cityId;
+  @Column(name = "latitude")
+  private Double latitude;
 
-  @Column(nullable = false, name = "country_id")
-  private UUID countryId;
+  @Column(name = "longitude")
+  private Double longitude;
 
-  @Column(nullable = true, name = "city_display_name")
-  private String cityDisplayName;
-
-  @Column(nullable = true, name = "country_display_name")
-  private String countryDisplayName;
+  @Column(nullable = false, name = "popularity")
+  @Builder.Default
+  private int popularity = 0;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, name = "source", length = 50)
   private LocationSource source;
 
-  @Column(name = "google_maps_id", length = 255)
-  private String googleMapsId;
+  @Column(name = "source_id", length = 255)
+  private String sourceId;
 
   @Column(name = "added_by", length = 255)
   private String addedBy;
-
-  @Type(StringArrayType.class)
-  @Column(name = "images", columnDefinition = "text[]")
-  @Builder.Default
-  private String[] images = new String[0];
 }

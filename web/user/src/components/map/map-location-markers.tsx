@@ -1,12 +1,13 @@
 import { Marker } from 'react-leaflet'
 
+import type { LocationResponse } from '@/generated/api/types.gen'
 import { getLocationMarkerIcon } from '@/lib/leaflet-icon'
-import type { MockLocation } from '@/mocks/types'
+import { getMapLocationKey } from '@/lib/map-location'
 
 type MapLocationMarkersProps = {
-  locations: MockLocation[]
+  locations: LocationResponse[]
   selectedId: string | null
-  onSelect: (location: MockLocation) => void
+  onSelect: (location: LocationResponse) => void
 }
 
 export function MapLocationMarkers({
@@ -17,11 +18,12 @@ export function MapLocationMarkers({
   return (
     <>
       {locations.map((location) => {
-        const isSelected = selectedId === location.id
+        const locationKey = getMapLocationKey(location)
+        const isSelected = selectedId === locationKey
 
         return (
           <Marker
-            key={location.id}
+            key={locationKey}
             position={[location.latitude, location.longitude]}
             icon={getLocationMarkerIcon(isSelected)}
             eventHandlers={{

@@ -707,6 +707,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /user/locations/bounding-box:
+    post:
+      summary: Fetch locations within a bounding box
+      tags:
+        - Locations
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoundingBoxRequest'
+      responses:
+        '200':
+          description: Locations within the bounding box
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocationResponse'
+        '400':
+          description: Invalid bounding box
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /user/trips:
     get:
       summary: List all trips for the current user
@@ -1413,10 +1453,8 @@ components:
       required:
         - id
         - name
-        - cityId
-        - countryId
+        - popularity
         - source
-        - images
         - createdAt
         - updatedAt
       properties:
@@ -1425,27 +1463,21 @@ components:
           format: uuid
         name:
           type: string
-        cityId:
-          type: string
-          format: uuid
-        countryId:
-          type: string
-          format: uuid
-        cityDisplayName:
-          type: string
-        countryDisplayName:
-          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        popularity:
+          type: integer
         source:
           type: string
-          enum: [GOOGLE_MAPS, MANUAL]
+          enum: [OPENTRIPMAPS, MANUAL]
         googleMapsId:
           type: string
         addedBy:
           type: string
-        images:
-          type: array
-          items:
-            type: string
         createdAt:
           type: string
           format: date-time
@@ -1457,21 +1489,38 @@ components:
       type: object
       required:
         - name
-        - cityId
-        - countryId
       properties:
         name:
           type: string
-        cityId:
-          type: string
-          format: uuid
-        countryId:
-          type: string
-          format: uuid
-        images:
-          type: array
-          items:
-            type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        popularity:
+          type: integer
+
+    BoundingBoxRequest:
+      type: object
+      required:
+        - minLat
+        - maxLat
+        - minLng
+        - maxLng
+      properties:
+        minLat:
+          type: number
+          format: double
+        maxLat:
+          type: number
+          format: double
+        minLng:
+          type: number
+          format: double
+        maxLng:
+          type: number
+          format: double
 
     CreateTripRequest:
       type: object

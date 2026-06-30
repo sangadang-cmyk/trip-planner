@@ -11,8 +11,9 @@ import { MapLocationDetailPanel } from '@/components/map/map-location-detail-pan
 import { MapLocationLayer } from '@/components/map/map-location-layer'
 import { MapSearchBar } from '@/components/map/map-search-bar'
 import { MapZoomControls } from '@/components/map/map-zoom-controls'
-import { MOCK_HCM_LOCATIONS } from '@/mocks'
-import type { MockLocation } from '@/mocks/types'
+import type { LocationResponse } from '@/generated/api/types.gen'
+import { useMapBoundingBoxLocations } from '@/hooks/use-map-bounding-box-locations'
+import { getMapLocationKey } from '@/lib/map-location'
 import { cn } from '@/lib/utils'
 
 const DEFAULT_CENTER: LatLngExpression = [10.7769, 106.7009]
@@ -24,17 +25,22 @@ type TripMapViewProps = {
 
 export function TripMapView({ className }: TripMapViewProps) {
   const [map, setMap] = useState<Map | null>(null)
-  const [panelLocation, setPanelLocation] = useState<MockLocation | null>(null)
+  const [panelLocation, setPanelLocation] = useState<LocationResponse | null>(
+    null,
+  )
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
+
+  const { locations, isPending } = useMapBoundingBoxLocations(map)
 
   const handleMapReady = useCallback((nextMap: Map) => {
     setMap(nextMap)
   }, [])
 
-  function handleSelectLocation(location: MockLocation) {
+  function handleSelectLocation(location: LocationResponse) {
+    const locationKey = getMapLocationKey(location)
     setPanelLocation(location)
-    setSelectedMarkerId(location.id)
+    setSelectedMarkerId(locationKey)
     setIsDetailOpen(true)
   }
 
@@ -60,7 +66,7 @@ export function TripMapView({ className }: TripMapViewProps) {
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <MapController onMapReady={handleMapReady} />
         <MapLocationLayer
-          locations={MOCK_HCM_LOCATIONS}
+          locations={locations}
           selectedId={selectedMarkerId}
           onSelect={handleSelectLocation}
         />
@@ -71,6 +77,12 @@ export function TripMapView({ className }: TripMapViewProps) {
           <SidebarMenuTrigger />
           <MapSearchBar />
         </div>
+
+        {isPending ? (
+          <div className="pointer-events-none absolute top-4 right-4 rounded-md bg-background/90 px-3 py-1.5 text-xs text-muted-foreground shadow-sm backdrop-blur-sm">
+            Loading locations…
+          </div>
+        ) : null}
 
         {panelLocation ? (
           <MapLocationDetailPanel

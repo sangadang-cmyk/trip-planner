@@ -1,5 +1,7 @@
 package tech.sangdang.tripplannerapi.modules.location.app.impl;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.openapitools.model.CreateManualLocationRequest;
@@ -7,25 +9,20 @@ import org.openapitools.model.LocationResponse;
 import org.openapitools.model.PaginatedLocationsResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import tech.sangdang.tripplannerapi.common.core.BadRequestException;
 import tech.sangdang.tripplannerapi.common.core.NotFoundException;
 import tech.sangdang.tripplannerapi.modules.location.app.LocationManagementService;
 import tech.sangdang.tripplannerapi.modules.location.app.mapper.LocationMapper;
-import tech.sangdang.tripplannerapi.modules.location.domain.CityEntity;
-import tech.sangdang.tripplannerapi.modules.location.domain.CountryEntity;
 import tech.sangdang.tripplannerapi.modules.location.domain.LocationEntity;
 import tech.sangdang.tripplannerapi.modules.location.domain.LocationSource;
-import tech.sangdang.tripplannerapi.modules.location.domain.repository.CityRepository;
-import tech.sangdang.tripplannerapi.modules.location.domain.repository.CountryRepository;
+import tech.sangdang.tripplannerapi.modules.location.domain.opentripmap.OpenTripMapSimpleFeature;
 import tech.sangdang.tripplannerapi.modules.location.domain.repository.LocationRepository;
 
 @Service
 @RequiredArgsConstructor
 public class LocationManagementServiceImpl implements LocationManagementService {
   private final LocationRepository locationRepository;
-  private final CityRepository cityRepository;
-  private final CountryRepository countryRepository;
   private final LocationMapper locationMapper;
 
   @Override
@@ -53,32 +50,38 @@ public class LocationManagementServiceImpl implements LocationManagementService 
 
   @Override
   public LocationResponse createManualLocation(CreateManualLocationRequest request, UUID addedBy) {
-    CountryEntity country =
-        countryRepository
-            .findById(request.getCountryId())
-            .orElseThrow(() -> new NotFoundException("Country not found"));
-
-    CityEntity city =
-        cityRepository
-            .findById(request.getCityId())
-            .orElseThrow(() -> new NotFoundException("City not found"));
-
-    if (!city.getCountryId().equals(request.getCountryId())) {
-      throw new BadRequestException("City is not in the specified country");
-    }
-
     LocationEntity location =
         LocationEntity.builder()
             .name(request.getName())
-            .cityId(request.getCityId())
-            .countryId(request.getCountryId())
-            .cityDisplayName(city.getName()) // Denormalized field
-            .countryDisplayName(country.getName()) // Denormalized field
+            .latitude(request.getLatitude())
+            .longitude(request.getLongitude())
+            .popularity(Optional.ofNullable(request.getPopularity()).orElse(0))
             .source(LocationSource.MANUAL)
             .addedBy(addedBy.toString())
-            .images(locationMapper.toImageArray(request.getImages()))
             .build();
 
     return locationMapper.toResponse(locationRepository.save(location));
+  }
+
+  @Async
+  @Override
+  public void cacheOpenTripMapLocations(List<OpenTripMapSimpleFeature> places) {
+    for (OpenTripMapSimpleFeature place : places) {
+      if (locationRepository.existsBySourceId(place.xid())) {
+        continue;
+      }
+      locationRepository.save(toEntity(place));
+    }
+  }
+
+  private LocationEntity toEntity(OpenTripMapSimpleFeature place) {
+    return LocationEntity.builder()
+        .name(place.name())
+        .latitude(place.point() != null ? place.point().lat() : null)
+        .longitude(place.point() != null ? place.point().lon() : null)
+        .popularity(0)
+        .source(LocationSource.OPENTRIPMAPS)
+        .sourceId(place.xid())
+        .build();
   }
 }
