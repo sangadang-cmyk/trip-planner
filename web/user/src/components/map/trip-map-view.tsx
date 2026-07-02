@@ -10,6 +10,7 @@ import { MapLocateButton } from '@/components/map/map-locate-button'
 import { MapLocationDetailPanel } from '@/components/map/map-location-detail-panel'
 import { MapLocationLayer } from '@/components/map/map-location-layer'
 import { MapSearchBar } from '@/components/map/map-search-bar'
+import { MapTripQuickAccess } from '@/components/map/map-trip-quick-access'
 import { MapZoomControls } from '@/components/map/map-zoom-controls'
 import type { LocationResponse } from '@/generated/api/types.gen'
 import { useMapBoundingBoxLocations } from '@/hooks/use-map-bounding-box-locations'
@@ -73,9 +74,12 @@ export function TripMapView({ className }: TripMapViewProps) {
       </MapContainer>
 
       <div className="pointer-events-none absolute inset-0 z-10">
-        <div className="pointer-events-auto absolute top-4 left-4 flex w-[min(100%-2rem,28rem)] items-center gap-2">
-          <SidebarMenuTrigger />
-          <MapSearchBar />
+        <div className="pointer-events-auto absolute top-4 left-4 flex items-start gap-2">
+          <div className="flex flex-col items-start gap-2">
+            <SidebarMenuTrigger />
+            <MapTripQuickAccess />
+          </div>
+          <MapSearchBar className="w-[min(100vw-5rem,24rem)]" />
         </div>
 
         {isPending ? (

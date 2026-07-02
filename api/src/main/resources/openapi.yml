@@ -1697,7 +1697,6 @@ components:
       type: object
       required:
         - locationId
-        - dayNumber
         - sortOrder
       properties:
         locationId:
@@ -1705,7 +1704,10 @@ components:
           format: uuid
         dayNumber:
           type: integer
-          minimum: 1
+          minimum: -1
+          default: -1
+          description: >
+            Itinerary day for this destination. Use -1 for unsorted destinations.
         sortOrder:
           type: integer
           minimum: 0
@@ -1717,7 +1719,9 @@ components:
       properties:
         dayNumber:
           type: integer
-          minimum: 1
+          minimum: -1
+          description: >
+            Itinerary day for this destination. Use -1 for unsorted destinations.
         sortOrder:
           type: integer
           minimum: 0
@@ -1746,6 +1750,7 @@ components:
           format: uuid
         dayNumber:
           type: integer
+          description: -1 when the destination is not assigned to a day yet.
         sortOrder:
           type: integer
         notes:

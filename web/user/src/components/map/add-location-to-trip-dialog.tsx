@@ -94,7 +94,7 @@ function TripPickerContent({
       path: { tripId: trip.id },
       body: {
         locationId: location.id,
-        dayNumber: 1,
+        dayNumber: -1,
         sortOrder: 0,
       },
     })

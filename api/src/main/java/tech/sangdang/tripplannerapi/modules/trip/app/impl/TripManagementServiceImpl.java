@@ -21,6 +21,7 @@ import tech.sangdang.tripplannerapi.modules.location.domain.repository.LocationR
 import tech.sangdang.tripplannerapi.modules.trip.app.TripManagementService;
 import tech.sangdang.tripplannerapi.modules.trip.app.mapper.TripDestinationMapper;
 import tech.sangdang.tripplannerapi.modules.trip.app.mapper.TripMapper;
+import tech.sangdang.tripplannerapi.modules.trip.app.utils.TripDestinationDayNumbers;
 import tech.sangdang.tripplannerapi.modules.trip.app.utils.TripThumbnailResolver;
 import tech.sangdang.tripplannerapi.modules.trip.domain.TripDestinationEntity;
 import tech.sangdang.tripplannerapi.modules.trip.domain.TripEntity;
@@ -93,9 +94,7 @@ public class TripManagementServiceImpl implements TripManagementService {
     if (tripRepository.findByIdAndUserId(tripId, userId).isEmpty()) {
       throw new NotFoundException("Trip not found");
     }
-    return tripDestinationRepository
-        .findByTrip_IdAndDeletedDateIsNullOrderByDayNumberAscSortOrderAsc(tripId)
-        .stream()
+    return tripDestinationRepository.findActiveByTripIdOrdered(tripId).stream()
         .map(tripDestinationMapper::toResponse)
         .toList();
   }
@@ -103,6 +102,8 @@ public class TripManagementServiceImpl implements TripManagementService {
   @Override
   public TripDestinationResponse createTripDestination(
       UUID tripId, CreateTripDestinationRequest request, UUID userId) {
+    int dayNumber = TripDestinationDayNumbers.resolveDayNumber(request.getDayNumber());
+
     TripEntity trip =
         tripRepository
             .findByIdAndUserId(tripId, userId)
@@ -123,7 +124,7 @@ public class TripManagementServiceImpl implements TripManagementService {
       }
 
       destination.setDeletedDate(null);
-      destination.setDayNumber(request.getDayNumber());
+      destination.setDayNumber(dayNumber);
       destination.setSortOrder(request.getSortOrder());
       destination.setNotes(request.getNotes());
       return tripDestinationMapper.toResponse(tripDestinationRepository.save(destination));
@@ -133,7 +134,7 @@ public class TripManagementServiceImpl implements TripManagementService {
         TripDestinationEntity.builder()
             .trip(trip)
             .location(location)
-            .dayNumber(request.getDayNumber())
+            .dayNumber(dayNumber)
             .sortOrder(request.getSortOrder())
             .notes(request.getNotes())
             .build();
@@ -157,6 +158,7 @@ public class TripManagementServiceImpl implements TripManagementService {
             .orElseThrow(() -> new NotFoundException("Trip destination not found"));
 
     if (request.getDayNumber() != null) {
+      TripDestinationDayNumbers.validateDayNumber(request.getDayNumber());
       destination.setDayNumber(request.getDayNumber());
     }
     if (request.getSortOrder() != null) {

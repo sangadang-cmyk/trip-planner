@@ -1,27 +1,47 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import {
   ArrowLeftIcon,
   CalendarIcon,
   ChevronRightIcon,
   MapPinIcon,
+  Trash2Icon,
 } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 import { SidebarMenuTrigger } from '@/components/dashboard/sidebar-menu-trigger'
 import { MapLocationDetailPanel } from '@/components/map/map-location-detail-panel'
 import { TripDestinationsMap } from '@/components/map/trip-destinations-map'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { ResizableSplitPane } from '@/components/ui/resizable-split-pane'
 import { Skeleton } from '@/components/ui/skeleton'
-import { getUserTripsByIdOptions } from '@/generated/api/@tanstack/react-query.gen'
-import type { LocationResponse } from '@/generated/api/types.gen'
+import {
+  deleteUserTripsByTripIdDestinationsByDestinationIdMutation,
+  getUserTripsByIdOptions,
+  getUserTripsByTripIdDestinationsQueryKey,
+  getUserTripsQueryKey,
+} from '@/generated/api/@tanstack/react-query.gen'
+import type {
+  LocationResponse,
+  TripDestinationResponse,
+} from '@/generated/api/types.gen'
 import { useTripDestinationLocations } from '@/hooks/use-trip-destination-locations'
 import {
   formatTripDateRange,
+  formatDestinationDayLabel,
   getTripStatus,
   tripStatusVariant,
+  UNSORTED_DAY_NUMBER,
 } from '@/lib/trip'
 import { cn } from '@/lib/utils'
 
@@ -46,9 +66,12 @@ function TripDetailSkeleton() {
 }
 
 export function TripDetailPage({ tripId }: TripDetailPageProps) {
+  const queryClient = useQueryClient()
   const [selectedLocation, setSelectedLocation] =
     useState<LocationResponse | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
+  const [deletingDestination, setDeletingDestination] =
+    useState<TripDestinationResponse | null>(null)
 
   const {
     data: trip,
@@ -67,6 +90,29 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
     isError: areDestinationsError,
   } = useTripDestinationLocations(tripId)
 
+  const deleteDestinationMutation = useMutation({
+    ...deleteUserTripsByTripIdDestinationsByDestinationIdMutation(),
+    onSuccess: () => {
+      toast.success('Destination removed from trip')
+      void queryClient.invalidateQueries({
+        queryKey: getUserTripsByTripIdDestinationsQueryKey({
+          path: { tripId },
+        }),
+      })
+      void queryClient.invalidateQueries({ queryKey: getUserTripsQueryKey() })
+
+      if (selectedLocation?.id === deletingDestination?.locationId) {
+        setIsDetailOpen(false)
+        setSelectedLocation(null)
+      }
+
+      setDeletingDestination(null)
+    },
+    onError: () => {
+      toast.error('Unable to remove this destination.')
+    },
+  })
+
   function handleSelectLocation(location: LocationResponse) {
     setSelectedLocation(location)
     setIsDetailOpen(true)
@@ -78,6 +124,19 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
 
   function handleDetailClosed() {
     setSelectedLocation(null)
+  }
+
+  function handleConfirmDelete() {
+    if (!deletingDestination) {
+      return
+    }
+
+    deleteDestinationMutation.mutate({
+      path: {
+        tripId,
+        destinationId: deletingDestination.id,
+      },
+    })
   }
 
   if (isTripPending || areDestinationsPending) {
@@ -170,12 +229,17 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
                     const isSelected = selectedLocation?.id === location?.id
 
                     return (
-                      <li key={destination.id}>
+                      <li
+                        key={destination.id}
+                        className={cn(
+                          'flex items-center gap-1',
+                          isSelected && 'bg-muted/50',
+                        )}
+                      >
                         <button
                           type="button"
                           className={cn(
-                            'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50',
-                            isSelected && 'bg-muted/50',
+                            'flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50',
                             !location && 'cursor-not-allowed opacity-60',
                           )}
                           disabled={!location}
@@ -186,14 +250,19 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
                           }}
                         >
                           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
-                            {destination.dayNumber}
+                            {destination.dayNumber === UNSORTED_DAY_NUMBER
+                              ? '–'
+                              : destination.dayNumber}
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">
                               {location?.name ?? 'Unknown location'}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Day {destination.dayNumber}
+                              {formatDestinationDayLabel(
+                                destination.dayNumber,
+                                trip.startDate,
+                              )}
                               {destination.notes
                                 ? ` · ${destination.notes}`
                                 : ''}
@@ -201,6 +270,16 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
                           </div>
                           <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
                         </button>
+
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="mr-2 shrink-0 text-muted-foreground hover:text-destructive"
+                          aria-label="Remove destination"
+                          onClick={() => setDeletingDestination(destination)}
+                        >
+                          <Trash2Icon />
+                        </Button>
                       </li>
                     )
                   })}
@@ -228,6 +307,40 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
           )
         }
       />
+
+      <Dialog
+        open={deletingDestination != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeletingDestination(null)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remove destination</DialogTitle>
+            <DialogDescription>
+              This will remove the destination from the trip. The location itself
+              will not be deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeletingDestination(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteDestinationMutation.isPending}
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

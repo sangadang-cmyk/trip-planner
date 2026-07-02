@@ -30,6 +30,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 @Entity
 public class TripDestinationEntity {
   public static final String TABLE = "trip_destinations";
+  public static final int UNSORTED_DAY_NUMBER = -1;
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -52,7 +53,8 @@ public class TripDestinationEntity {
   private LocationEntity location;
 
   @Column(nullable = false, name = "day_number")
-  private int dayNumber;
+  @Builder.Default
+  private int dayNumber = UNSORTED_DAY_NUMBER;
 
   @Column(nullable = false, name = "sort_order")
   private int sortOrder;

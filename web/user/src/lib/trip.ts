@@ -2,6 +2,70 @@ import type { TripResponse } from '@/generated/api/types.gen'
 
 export type TripStatus = 'Upcoming' | 'Ongoing' | 'Completed'
 
+export const UNSORTED_DAY_NUMBER = -1
+
+export function parseIsoDateLocal(isoDate: string) {
+  const [year, month, day] = isoDate.split('-').map(Number)
+
+  return new Date(year, month - 1, day)
+}
+
+export function getTripDayDates(startDate: string, endDate: string) {
+  const dates: Date[] = []
+  const current = parseIsoDateLocal(startDate)
+  const end = parseIsoDateLocal(endDate)
+
+  while (current <= end) {
+    dates.push(new Date(current))
+    current.setDate(current.getDate() + 1)
+  }
+
+  return dates
+}
+
+export function getDayNumberFromTripDate(startDate: string, selectedDate: Date) {
+  const start = parseIsoDateLocal(startDate)
+  const millisecondsPerDay = 24 * 60 * 60 * 1000
+
+  return (
+    Math.round((selectedDate.getTime() - start.getTime()) / millisecondsPerDay) +
+    1
+  )
+}
+
+export function getTripDateFromDayNumber(startDate: string, dayNumber: number) {
+  if (dayNumber === UNSORTED_DAY_NUMBER) {
+    return null
+  }
+
+  const date = parseIsoDateLocal(startDate)
+  date.setDate(date.getDate() + dayNumber - 1)
+
+  return date
+}
+
+export function formatDestinationDayLabel(
+  dayNumber: number,
+  tripStartDate?: string,
+) {
+  if (dayNumber === UNSORTED_DAY_NUMBER) {
+    return 'Unsorted'
+  }
+
+  if (tripStartDate) {
+    const date = getTripDateFromDayNumber(tripStartDate, dayNumber)
+    if (date) {
+      return new Intl.DateTimeFormat(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      }).format(date)
+    }
+  }
+
+  return `Day ${dayNumber}`
+}
+
 function toLocalDateString(date: Date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
