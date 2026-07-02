@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 
 import { MapLocationMarkers } from '@/components/map/map-location-markers'
 import type { LocationResponse } from '@/generated/api/types.gen'
+import { useAnimatedMapMarkers } from '@/hooks/use-animated-map-markers'
 import { getMapLocationKey } from '@/lib/map-location'
 
 const SELECT_ZOOM = 16
@@ -20,6 +21,7 @@ export function MapLocationLayer({
   onSelect,
 }: MapLocationLayerProps) {
   const map = useMap()
+  const animatedMarkers = useAnimatedMapMarkers(locations)
 
   useEffect(() => {
     const selected = locations.find(
@@ -37,7 +39,7 @@ export function MapLocationLayer({
 
   return (
     <MapLocationMarkers
-      locations={locations}
+      markers={animatedMarkers}
       selectedId={selectedId}
       onSelect={onSelect}
     />

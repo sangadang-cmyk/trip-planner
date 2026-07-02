@@ -1,23 +1,24 @@
 import { Marker } from 'react-leaflet'
 
-import type { LocationResponse } from '@/generated/api/types.gen'
+import type { AnimatedMapMarker } from '@/hooks/use-animated-map-markers'
 import { getLocationMarkerIcon } from '@/lib/leaflet-icon'
 import { getMapLocationKey } from '@/lib/map-location'
+import type { LocationResponse } from '@/generated/api/types.gen'
 
 type MapLocationMarkersProps = {
-  locations: LocationResponse[]
+  markers: AnimatedMapMarker[]
   selectedId: string | null
   onSelect: (location: LocationResponse) => void
 }
 
 export function MapLocationMarkers({
-  locations,
+  markers,
   selectedId,
   onSelect,
 }: MapLocationMarkersProps) {
   return (
     <>
-      {locations.map((location) => {
+      {markers.map(({ location, phase }) => {
         const locationKey = getMapLocationKey(location)
         const isSelected = selectedId === locationKey
 
@@ -25,7 +26,7 @@ export function MapLocationMarkers({
           <Marker
             key={locationKey}
             position={[location.latitude, location.longitude]}
-            icon={getLocationMarkerIcon(isSelected)}
+            icon={getLocationMarkerIcon(isSelected, phase)}
             eventHandlers={{
               click: () => onSelect(location),
             }}

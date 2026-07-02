@@ -135,3 +135,87 @@
   width: 34px;
   height: 48px;
 }
+
+@keyframes map-pin-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.82;
+  }
+}
+
+@keyframes map-pin-fade-in-selected {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes map-pin-fade-out {
+  from {
+    opacity: 0.82;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes map-pin-fade-out-selected {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes map-pin-pop-in {
+  from {
+    transform: scale(0.7);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes map-pin-pop-out {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(0.7);
+  }
+}
+
+.map-pin-enter:not(.map-pin-selected) {
+  animation: map-pin-fade-in 0.28s ease-out forwards;
+}
+
+.map-pin-enter.map-pin-selected {
+  animation: map-pin-fade-in-selected 0.28s ease-out forwards;
+}
+
+.map-pin-exit:not(.map-pin-selected) {
+  animation: map-pin-fade-out 0.28s ease-in forwards;
+}
+
+.map-pin-exit.map-pin-selected {
+  animation: map-pin-fade-out-selected 0.28s ease-in forwards;
+}
+
+.map-pin-enter svg {
+  animation: map-pin-pop-in 0.28s ease-out forwards;
+}
+
+.map-pin-exit svg {
+  animation: map-pin-pop-out 0.28s ease-in forwards;
+}

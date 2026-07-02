@@ -1,36 +1,68 @@
 import type { Map } from 'leaflet'
 import { useMutation } from '@tanstack/react-query'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { postUserLocationsBoundingBoxMutation } from '@/generated/api/@tanstack/react-query.gen'
-import type { BoundingBoxRequest, LocationResponse } from '@/generated/api/types.gen'
+import type { BoundingBoxRequest } from '@/generated/api/types.gen'
+import { selectVisibleMapLocations } from '@/lib/map-bounds'
 import { isMappableLocation } from '@/lib/map-location'
+import {
+  selectAllMapLocations,
+  useMapLocationStore,
+} from '@/stores/map-location-store'
 
 const DEBOUNCE_MS = 500
 const THROTTLE_MS = 1000
 
-function getBoundingBoxFromMap(map: Map): BoundingBoxRequest {
+type MapViewport = {
+  bounds: BoundingBoxRequest
+  zoom: number
+}
+
+function getViewportFromMap(map: Map): MapViewport {
   const bounds = map.getBounds()
 
   return {
-    minLat: bounds.getSouth(),
-    maxLat: bounds.getNorth(),
-    minLng: bounds.getWest(),
-    maxLng: bounds.getEast(),
+    bounds: {
+      minLat: bounds.getSouth(),
+      maxLat: bounds.getNorth(),
+      minLng: bounds.getWest(),
+      maxLng: bounds.getEast(),
+    },
+    zoom: map.getZoom(),
   }
 }
 
 export function useMapBoundingBoxLocations(map: Map | null) {
-  const [locations, setLocations] = useState<LocationResponse[]>([])
+  const [viewport, setViewport] = useState<MapViewport | null>(null)
+  const locationsById = useMapLocationStore((state) => state.locationsById)
+  const upsertLocations = useMapLocationStore((state) => state.upsertLocations)
   const lastFetchAtRef = useRef(0)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const throttleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingBoundsRef = useRef<BoundingBoxRequest | null>(null)
 
+  const cachedLocations = useMemo(
+    () => selectAllMapLocations(locationsById),
+    [locationsById],
+  )
+
+  const visibleLocations = useMemo(() => {
+    if (!viewport) {
+      return []
+    }
+
+    return selectVisibleMapLocations(
+      cachedLocations,
+      viewport.bounds,
+      viewport.zoom,
+    )
+  }, [cachedLocations, viewport])
+
   const { mutate, isPending, isError, error } = useMutation({
     ...postUserLocationsBoundingBoxMutation(),
     onSuccess: (data) => {
-      setLocations(data.filter(isMappableLocation))
+      upsertLocations(data.filter(isMappableLocation))
     },
   })
 
@@ -44,8 +76,8 @@ export function useMapBoundingBoxLocations(map: Map | null) {
   )
 
   const scheduleFetch = useCallback(
-    (nextMap: Map) => {
-      pendingBoundsRef.current = getBoundingBoxFromMap(nextMap)
+    (bounds: BoundingBoxRequest) => {
+      pendingBoundsRef.current = bounds
 
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current)
@@ -78,23 +110,32 @@ export function useMapBoundingBoxLocations(map: Map | null) {
     [fetchForBounds],
   )
 
+  const handleMapChange = useCallback(
+    (nextMap: Map) => {
+      const nextViewport = getViewportFromMap(nextMap)
+      setViewport(nextViewport)
+      scheduleFetch(nextViewport.bounds)
+    },
+    [scheduleFetch],
+  )
+
   useEffect(() => {
     if (!map) {
       return
     }
 
-    const handleMapChange = () => {
-      scheduleFetch(map)
+    const onMapChange = () => {
+      handleMapChange(map)
     }
 
-    scheduleFetch(map)
+    onMapChange()
 
-    map.on('moveend', handleMapChange)
-    map.on('zoomend', handleMapChange)
+    map.on('moveend', onMapChange)
+    map.on('zoomend', onMapChange)
 
     return () => {
-      map.off('moveend', handleMapChange)
-      map.off('zoomend', handleMapChange)
+      map.off('moveend', onMapChange)
+      map.off('zoomend', onMapChange)
 
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current)
@@ -104,10 +145,11 @@ export function useMapBoundingBoxLocations(map: Map | null) {
         clearTimeout(throttleTimerRef.current)
       }
     }
-  }, [map, scheduleFetch])
+  }, [map, handleMapChange])
 
   return {
-    locations,
+    locations: visibleLocations,
+    cachedLocationCount: cachedLocations.length,
     isPending,
     isError,
     error,
