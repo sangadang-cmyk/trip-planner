@@ -38,9 +38,14 @@ public class SecurityConfig {
                                                 "/swagger-ui.html",
                                                 "/v3/api-docs/**",
                                                 "/public/**").permitAll()
+                                        .requestMatchers(
+                                                "/user/locations/bounding-box",
+                                                "/user/locations/{id}",
+                                                "/user/locations/details/**")
+                                                .permitAll()
+                                        .requestMatchers("/user/**").hasRole(Role.USER.name())
                                         .requestMatchers("/admin/**").hasRole(Role.ADMIN.name())
                                         .requestMatchers("/private/**").authenticated()
-                                        .requestMatchers("/user/**").hasRole(Role.USER.name())
                                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

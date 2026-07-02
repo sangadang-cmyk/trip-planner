@@ -2,12 +2,14 @@ package tech.sangdang.tripplannerapi.modules.location.infra;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import tech.sangdang.tripplannerapi.config.properties.OpenTripMapProperties;
+import tech.sangdang.tripplannerapi.modules.location.domain.opentripmap.OpenTripMapPlace;
 import tech.sangdang.tripplannerapi.modules.location.domain.opentripmap.OpenTripMapSimpleFeature;
 import tech.sangdang.tripplannerapi.modules.location.domain.port.LocationFetchPort;
 
@@ -55,6 +57,7 @@ public class OpenTripMapProvider implements LocationFetchPort {
                         .queryParam("lon_max", maxLng)
                         .queryParam("format", "json")
                         .queryParam("limit", limit)
+                        .queryParam("rate", 2)
                         .queryParam("apikey", openTripMapProperties.apiKey())
                         .build(LANGUAGE))
             .retrieve()
@@ -73,5 +76,44 @@ public class OpenTripMapProvider implements LocationFetchPort {
     log.debug("OpenTripMap places/bbox returned {} place(s)", places.size());
     log.info("Successfully fetched {} place(s) from OpenTripMap", places.size());
     return places;
+  }
+
+  @Override
+  public Optional<OpenTripMapPlace> fetchPlaceByXid(String xid) {
+    log.trace("Calling OpenTripMap places/xid with lang={}, xid={}", LANGUAGE, xid);
+    log.info("Fetching place details from OpenTripMap for xid={}", xid);
+
+    Optional<OpenTripMapPlace> place =
+        openTripMapRestClient
+            .get()
+            .uri(
+                uriBuilder ->
+                    uriBuilder
+                        .path("/{lang}/places/xid/{xid}")
+                        .queryParam("apikey", openTripMapProperties.apiKey())
+                        .build(LANGUAGE, xid))
+            .exchange(
+                (request, response) -> {
+                  if (response.getStatusCode().value() == 404) {
+                    log.info("OpenTripMap place not found for xid={}", xid);
+                    return Optional.empty();
+                  }
+
+                  if (response.getStatusCode().isError()) {
+                    throw new IllegalStateException(
+                        "OpenTripMap place details request failed with status "
+                            + response.getStatusCode().value());
+                  }
+
+                  return Optional.ofNullable(response.bodyTo(OpenTripMapPlace.class));
+                });
+
+    if (place.isEmpty()) {
+      log.warn("OpenTripMap returned no place details for xid={}", xid);
+    } else {
+      log.info("Successfully fetched place details from OpenTripMap for xid={}", xid);
+    }
+
+    return place;
   }
 }

@@ -12,9 +12,14 @@ import { setAccessToken } from '@/lib/auth'
 type LoginFormProps = {
   initialEmail?: string
   successMessage?: string | null
+  onSuccess?: () => void
 }
 
-export function LoginForm({ initialEmail = '', successMessage = null }: LoginFormProps) {
+export function LoginForm({
+  initialEmail = '',
+  successMessage = null,
+  onSuccess,
+}: LoginFormProps) {
   const navigate = useNavigate()
   const [email, setEmail] = useState(initialEmail)
   const [password, setPassword] = useState('')
@@ -30,6 +35,10 @@ export function LoginForm({ initialEmail = '', successMessage = null }: LoginFor
     onSuccess: (data) => {
       setAccessToken(data.accessToken)
       toast.success('Signed in successfully')
+      if (onSuccess) {
+        onSuccess()
+        return
+      }
       void navigate({ to: '/' })
     },
     onError: () => {

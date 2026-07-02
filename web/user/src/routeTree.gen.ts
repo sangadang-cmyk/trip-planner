@@ -13,7 +13,8 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
-import { Route as AppTripsRouteImport } from './routes/_app/trips'
+import { Route as AppTripsIndexRouteImport } from './routes/_app/trips/index'
+import { Route as AppTripsTripIdRouteImport } from './routes/_app/trips/$tripId'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -34,9 +35,14 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppTripsRoute = AppTripsRouteImport.update({
-  id: '/trips',
-  path: '/trips',
+const AppTripsIndexRoute = AppTripsIndexRouteImport.update({
+  id: '/trips/',
+  path: '/trips/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTripsTripIdRoute = AppTripsTripIdRouteImport.update({
+  id: '/trips/$tripId',
+  path: '/trips/$tripId',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -44,28 +50,38 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/trips': typeof AppTripsRoute
+  '/trips/$tripId': typeof AppTripsTripIdRoute
+  '/trips/': typeof AppTripsIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/trips': typeof AppTripsRoute
   '/': typeof AppIndexRoute
+  '/trips/$tripId': typeof AppTripsTripIdRoute
+  '/trips': typeof AppTripsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/_app/trips': typeof AppTripsRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/trips/$tripId': typeof AppTripsTripIdRoute
+  '/_app/trips/': typeof AppTripsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/register' | '/trips'
+  fullPaths: '/' | '/login' | '/register' | '/trips/$tripId' | '/trips/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/register' | '/trips' | '/'
-  id: '__root__' | '/_app' | '/login' | '/register' | '/_app/trips' | '/_app/'
+  to: '/login' | '/register' | '/' | '/trips/$tripId' | '/trips'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/login'
+    | '/register'
+    | '/_app/'
+    | '/_app/trips/$tripId'
+    | '/_app/trips/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -104,24 +120,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/trips': {
-      id: '/_app/trips'
+    '/_app/trips/': {
+      id: '/_app/trips/'
       path: '/trips'
-      fullPath: '/trips'
-      preLoaderRoute: typeof AppTripsRouteImport
+      fullPath: '/trips/'
+      preLoaderRoute: typeof AppTripsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/trips/$tripId': {
+      id: '/_app/trips/$tripId'
+      path: '/trips/$tripId'
+      fullPath: '/trips/$tripId'
+      preLoaderRoute: typeof AppTripsTripIdRouteImport
       parentRoute: typeof AppRoute
     }
   }
 }
 
 interface AppRouteChildren {
-  AppTripsRoute: typeof AppTripsRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppTripsTripIdRoute: typeof AppTripsTripIdRoute
+  AppTripsIndexRoute: typeof AppTripsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppTripsRoute: AppTripsRoute,
   AppIndexRoute: AppIndexRoute,
+  AppTripsTripIdRoute: AppTripsTripIdRoute,
+  AppTripsIndexRoute: AppTripsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

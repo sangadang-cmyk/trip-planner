@@ -1,6 +1,7 @@
 package tech.sangdang.tripplannerapi.modules.trip.app.impl;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.time.LocalDateTime;
@@ -20,6 +21,7 @@ import tech.sangdang.tripplannerapi.modules.location.domain.repository.LocationR
 import tech.sangdang.tripplannerapi.modules.trip.app.TripManagementService;
 import tech.sangdang.tripplannerapi.modules.trip.app.mapper.TripDestinationMapper;
 import tech.sangdang.tripplannerapi.modules.trip.app.mapper.TripMapper;
+import tech.sangdang.tripplannerapi.modules.trip.app.utils.TripThumbnailResolver;
 import tech.sangdang.tripplannerapi.modules.trip.domain.TripDestinationEntity;
 import tech.sangdang.tripplannerapi.modules.trip.domain.TripEntity;
 import tech.sangdang.tripplannerapi.modules.trip.domain.repository.TripDestinationRepository;
@@ -33,11 +35,20 @@ public class TripManagementServiceImpl implements TripManagementService {
   private final LocationRepository locationRepository;
   private final TripMapper tripMapper;
   private final TripDestinationMapper tripDestinationMapper;
+  private final TripThumbnailResolver tripThumbnailResolver;
 
   @Override
   public List<TripResponse> getTrips(UUID userId) {
-    return tripRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
-        .map(tripMapper::toResponse)
+    List<TripEntity> trips = tripRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    if (trips.isEmpty()) {
+      return List.of();
+    }
+
+    List<UUID> tripIds = trips.stream().map(TripEntity::getId).toList();
+    Map<UUID, String> thumbnailsByTripId = tripThumbnailResolver.resolveThumbnailsByTripId(tripIds);
+
+    return trips.stream()
+        .map(trip -> tripMapper.toResponse(trip, thumbnailsByTripId.get(trip.getId())))
         .toList();
   }
 

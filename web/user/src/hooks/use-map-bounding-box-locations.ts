@@ -33,11 +33,23 @@ function getViewportFromMap(map: Map): MapViewport {
   }
 }
 
+function getBoundsKey(bounds: BoundingBoxRequest): string {
+  const precision = 5
+
+  return [
+    bounds.minLat.toFixed(precision),
+    bounds.maxLat.toFixed(precision),
+    bounds.minLng.toFixed(precision),
+    bounds.maxLng.toFixed(precision),
+  ].join('|')
+}
+
 export function useMapBoundingBoxLocations(map: Map | null) {
   const [viewport, setViewport] = useState<MapViewport | null>(null)
   const locationsById = useMapLocationStore((state) => state.locationsById)
   const upsertLocations = useMapLocationStore((state) => state.upsertLocations)
   const lastFetchAtRef = useRef(0)
+  const lastFetchedBoundsKeyRef = useRef<string | null>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const throttleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingBoundsRef = useRef<BoundingBoxRequest | null>(null)
@@ -68,8 +80,15 @@ export function useMapBoundingBoxLocations(map: Map | null) {
 
   const fetchForBounds = useCallback(
     (bounds: BoundingBoxRequest) => {
+      const boundsKey = getBoundsKey(bounds)
+      if (lastFetchedBoundsKeyRef.current === boundsKey) {
+        pendingBoundsRef.current = null
+        return
+      }
+
       mutate({ body: bounds })
       lastFetchAtRef.current = Date.now()
+      lastFetchedBoundsKeyRef.current = boundsKey
       pendingBoundsRef.current = null
     },
     [mutate],
@@ -77,6 +96,11 @@ export function useMapBoundingBoxLocations(map: Map | null) {
 
   const scheduleFetch = useCallback(
     (bounds: BoundingBoxRequest) => {
+      const boundsKey = getBoundsKey(bounds)
+      if (lastFetchedBoundsKeyRef.current === boundsKey) {
+        return
+      }
+
       pendingBoundsRef.current = bounds
 
       if (debounceTimerRef.current) {

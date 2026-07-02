@@ -707,13 +707,75 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /user/locations/{id}:
+    get:
+      summary: Get location by ID
+      tags:
+        - Locations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Location not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/locations/details/{id}:
+    get:
+      summary: Get location details by ID
+      tags:
+        - Locations
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Location details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationDetailsResponse'
+        '404':
+          description: Location details not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /user/locations/bounding-box:
     post:
       summary: Fetch locations within a bounding box
       tags:
         - Locations
-      security:
-        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -1448,6 +1510,43 @@ components:
         totalPages:
           type: integer
 
+    LocationDetailsResponse:
+      type: object
+      required:
+        - id
+        - images
+        - previewImages
+        - kinds
+        - description
+        - popularity
+        - source
+      properties:
+        id:
+          type: string
+          format: uuid
+        images:
+          type: array
+          items:
+            type: string
+        previewImages:
+          type: array
+          items:
+            type: string
+        kinds:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        popularity:
+          type: integer
+        country:
+          type: string
+        state:
+          type: string
+        source:
+          type: string
+
     LocationResponse:
       type: object
       required:
@@ -1581,6 +1680,12 @@ components:
           format: date
         notes:
           type: string
+        thumbnail:
+          type: string
+          format: uri
+          description: >
+            Thumbnail URL derived from the first trip destination that has image
+            details. Null when the trip has no destinations or none have images.
         createdAt:
           type: string
           format: date-time

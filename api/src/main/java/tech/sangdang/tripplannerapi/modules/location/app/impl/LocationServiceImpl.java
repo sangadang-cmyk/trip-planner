@@ -1,6 +1,7 @@
 package tech.sangdang.tripplannerapi.modules.location.app.impl;
 
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.model.BoundingBoxRequest;
@@ -30,6 +31,11 @@ public class LocationServiceImpl implements LocationService {
   private final OpenTripMapResponseMapper openTripMapResponseMapper;
   private final LocationManagementService locationManagementService;
   private final LocationMapper locationMapper;
+
+  @Override
+  public LocationResponse getLocationById(UUID id) {
+    return locationManagementService.getLocationById(id);
+  }
 
   @Override
   public List<LocationResponse> fetchLocationsInBoundingBox(BoundingBoxRequest boundingBoxRequest) {

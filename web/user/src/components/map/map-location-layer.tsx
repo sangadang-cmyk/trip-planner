@@ -1,5 +1,5 @@
 import { useMap } from 'react-leaflet'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { MapLocationMarkers } from '@/components/map/map-location-markers'
 import type { LocationResponse } from '@/generated/api/types.gen'
@@ -22,14 +22,26 @@ export function MapLocationLayer({
 }: MapLocationLayerProps) {
   const map = useMap()
   const animatedMarkers = useAnimatedMapMarkers(locations)
+  const flewToSelectionRef = useRef<string | null>(null)
 
   useEffect(() => {
+    if (!selectedId) {
+      flewToSelectionRef.current = null
+      return
+    }
+
+    if (flewToSelectionRef.current === selectedId) {
+      return
+    }
+
     const selected = locations.find(
       (location) => getMapLocationKey(location) === selectedId,
     )
     if (!selected || selected.latitude == null || selected.longitude == null) {
       return
     }
+
+    flewToSelectionRef.current = selectedId
 
     map.flyTo([selected.latitude, selected.longitude], SELECT_ZOOM, {
       duration: FLY_DURATION_SECONDS,
