@@ -1,6 +1,8 @@
 import type { Map } from 'leaflet'
 import type { LatLngExpression } from 'leaflet'
-import { useCallback, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { getRouteApi, useNavigate } from '@tanstack/react-router'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, TileLayer } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -13,49 +15,172 @@ import { MapLocationLayer } from '@/components/map/map-location-layer'
 import { MapSearchBar } from '@/components/map/map-search-bar'
 import { MapTripQuickAccess } from '@/components/map/map-trip-quick-access'
 import { MapZoomControls } from '@/components/map/map-zoom-controls'
+import { getUserLocationsByIdOptions } from '@/generated/api/@tanstack/react-query.gen'
 import type { LocationResponse } from '@/generated/api/types.gen'
 import { useMapBoundingBoxLocations } from '@/hooks/use-map-bounding-box-locations'
 import { useMapGeolocationSelection } from '@/hooks/use-map-geolocation-selection'
-import { getMapLocationKey } from '@/lib/map-location'
+import {
+  getMapLocationKey,
+  isMappableLocation,
+} from '@/lib/map-location'
 import { cn } from '@/lib/utils'
+import { useMapLocationStore } from '@/stores/map-location-store'
 
 const DEFAULT_CENTER: LatLngExpression = [10.7769, 106.7009]
 const DEFAULT_ZOOM = 13
+
+const mapRoute = getRouteApi('/_app/')
 
 type TripMapViewProps = {
   className?: string
 }
 
+function findCachedLocation(
+  locationId: string,
+  locationsById: Record<string, LocationResponse>,
+): LocationResponse | undefined {
+  if (locationsById[locationId]) {
+    return locationsById[locationId]
+  }
+
+  return Object.values(locationsById).find((location) => location.id === locationId)
+}
+
 export function TripMapView({ className }: TripMapViewProps) {
+  const navigate = useNavigate()
+  const { locationId } = mapRoute.useSearch()
   const [map, setMap] = useState<Map | null>(null)
   const [panelLocation, setPanelLocation] = useState<LocationResponse | null>(
     null,
   )
-  const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
-  const [isDetailOpen, setIsDetailOpen] = useState(false)
+  const locationIdRef = useRef(locationId)
+  locationIdRef.current = locationId
+  const locationsById = useMapLocationStore((state) => state.locationsById)
+  const upsertLocations = useMapLocationStore((state) => state.upsertLocations)
 
   const { locations, isPending } = useMapBoundingBoxLocations(map)
   const { polygonGeoJson, isLoadingPolygon, selectSearchResult } =
     useMapGeolocationSelection(map)
+
+  const cachedLocation = locationId
+    ? findCachedLocation(locationId, locationsById)
+    : undefined
+
+  const {
+    data: fetchedLocation,
+    isError: isFetchedLocationError,
+    isPending: isFetchedLocationPending,
+  } = useQuery({
+    ...getUserLocationsByIdOptions({
+      path: { id: locationId ?? '' },
+    }),
+    enabled: Boolean(locationId) && !cachedLocation,
+  })
+
+  useEffect(() => {
+    if (fetchedLocation && isMappableLocation(fetchedLocation)) {
+      upsertLocations([fetchedLocation])
+    }
+  }, [fetchedLocation, upsertLocations])
+
+  const resolvedLocation = useMemo(() => {
+    if (!locationId) {
+      return null
+    }
+
+    return (
+      cachedLocation ??
+      fetchedLocation ??
+      locations.find((location) => location.id === locationId) ??
+      null
+    )
+  }, [cachedLocation, fetchedLocation, locationId, locations])
+
+  const selectedMarkerId = useMemo(() => {
+    if (!resolvedLocation) {
+      return null
+    }
+
+    return getMapLocationKey(resolvedLocation)
+  }, [resolvedLocation])
+
+  const mapLocations = useMemo(() => {
+    if (!resolvedLocation || !isMappableLocation(resolvedLocation)) {
+      return locations
+    }
+
+    const resolvedKey = getMapLocationKey(resolvedLocation)
+    if (locations.some((location) => getMapLocationKey(location) === resolvedKey)) {
+      return locations
+    }
+
+    return [...locations, resolvedLocation]
+  }, [locations, resolvedLocation])
+
+  const displayedLocation = useMemo(() => {
+    if (!locationId) {
+      return panelLocation
+    }
+
+    if (resolvedLocation) {
+      return resolvedLocation
+    }
+
+    if (panelLocation?.id === locationId) {
+      return panelLocation
+    }
+
+    return null
+  }, [locationId, panelLocation, resolvedLocation])
+
+  useEffect(() => {
+    if (!locationId) {
+      return
+    }
+
+    if (isFetchedLocationPending) {
+      return
+    }
+
+    if (!resolvedLocation) {
+      if (isFetchedLocationError) {
+        void navigate({ to: '/', search: {}, replace: true })
+      }
+      return
+    }
+
+    setPanelLocation(resolvedLocation)
+  }, [
+    isFetchedLocationError,
+    isFetchedLocationPending,
+    locationId,
+    navigate,
+    resolvedLocation,
+  ])
 
   const handleMapReady = useCallback((nextMap: Map) => {
     setMap(nextMap)
   }, [])
 
   function handleSelectLocation(location: LocationResponse) {
-    const locationKey = getMapLocationKey(location)
-    setPanelLocation(location)
-    setSelectedMarkerId(locationKey)
-    setIsDetailOpen(true)
+    if (!location.id) {
+      return
+    }
+
+    void navigate({
+      to: '/',
+      search: { locationId: location.id },
+    })
   }
 
   function handleCloseDetail() {
-    setSelectedMarkerId(null)
-    setIsDetailOpen(false)
+    void navigate({ to: '/', search: {} })
   }
 
   function handleDetailClosed() {
-    setPanelLocation(null)
+    if (!locationIdRef.current) {
+      setPanelLocation(null)
+    }
   }
 
   return (
@@ -72,7 +197,7 @@ export function TripMapView({ className }: TripMapViewProps) {
         <MapController onMapReady={handleMapReady} />
         <MapGeolocationPolygonLayer data={polygonGeoJson} />
         <MapLocationLayer
-          locations={locations}
+          locations={mapLocations}
           selectedId={selectedMarkerId}
           onSelect={handleSelectLocation}
         />
@@ -97,10 +222,11 @@ export function TripMapView({ className }: TripMapViewProps) {
           </div>
         ) : null}
 
-        {panelLocation ? (
+        {displayedLocation ? (
           <MapLocationDetailPanel
-            location={panelLocation}
-            open={isDetailOpen}
+            key={displayedLocation.id}
+            location={displayedLocation}
+            open={Boolean(locationId)}
             onClose={handleCloseDetail}
             onClosed={handleDetailClosed}
             className="absolute top-[4.5rem] bottom-0 left-4"

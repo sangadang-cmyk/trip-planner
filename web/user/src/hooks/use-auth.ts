@@ -13,8 +13,9 @@ import { buildLoginFrom } from '@/lib/login-redirect'
 
 export function useAuth() {
   const navigate = useNavigate()
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
+  const loginFrom = useRouterState({
+    select: (state) =>
+      buildLoginFrom(state.location.pathname, state.location.search),
   })
   const authenticated = useSyncExternalStore(
     subscribeToAuthChanges,
@@ -33,7 +34,7 @@ export function useAuth() {
       return true
     }
 
-    const from = buildLoginFrom(pathname)
+    const from = loginFrom
     void navigate({
       to: '/login',
       search: from ? { from } : {},

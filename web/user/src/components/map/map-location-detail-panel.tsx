@@ -226,7 +226,7 @@ export function MapLocationDetailPanel({
       return
     }
 
-    if (!visible) {
+    if (!visible && !open) {
       onClosed()
     }
   }
