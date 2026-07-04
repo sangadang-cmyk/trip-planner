@@ -14,7 +14,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
 import { Route as AuthenticatedDashboardLocationsRouteImport } from './routes/_authenticated/dashboard/locations'
-import { Route as AuthenticatedDashboardGeolocationRouteImport } from './routes/_authenticated/dashboard/geolocation'
 import { Route as AuthenticatedDashboardAccountsRouteImport } from './routes/_authenticated/dashboard/accounts'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -43,12 +42,6 @@ const AuthenticatedDashboardLocationsRoute =
     path: '/locations',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
-const AuthenticatedDashboardGeolocationRoute =
-  AuthenticatedDashboardGeolocationRouteImport.update({
-    id: '/geolocation',
-    path: '/geolocation',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
 const AuthenticatedDashboardAccountsRoute =
   AuthenticatedDashboardAccountsRouteImport.update({
     id: '/accounts',
@@ -60,14 +53,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/dashboard/accounts': typeof AuthenticatedDashboardAccountsRoute
-  '/dashboard/geolocation': typeof AuthenticatedDashboardGeolocationRoute
   '/dashboard/locations': typeof AuthenticatedDashboardLocationsRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard/accounts': typeof AuthenticatedDashboardAccountsRoute
-  '/dashboard/geolocation': typeof AuthenticatedDashboardGeolocationRoute
   '/dashboard/locations': typeof AuthenticatedDashboardLocationsRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
 }
@@ -77,7 +68,6 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_authenticated/dashboard/accounts': typeof AuthenticatedDashboardAccountsRoute
-  '/_authenticated/dashboard/geolocation': typeof AuthenticatedDashboardGeolocationRoute
   '/_authenticated/dashboard/locations': typeof AuthenticatedDashboardLocationsRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
@@ -87,23 +77,16 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/dashboard/accounts'
-    | '/dashboard/geolocation'
     | '/dashboard/locations'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/dashboard/accounts'
-    | '/dashboard/geolocation'
-    | '/dashboard/locations'
-    | '/dashboard'
+  to: '/' | '/dashboard/accounts' | '/dashboard/locations' | '/dashboard'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/_authenticated/dashboard'
     | '/_authenticated/dashboard/accounts'
-    | '/_authenticated/dashboard/geolocation'
     | '/_authenticated/dashboard/locations'
     | '/_authenticated/dashboard/'
   fileRoutesById: FileRoutesById
@@ -150,13 +133,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardLocationsRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
-    '/_authenticated/dashboard/geolocation': {
-      id: '/_authenticated/dashboard/geolocation'
-      path: '/geolocation'
-      fullPath: '/dashboard/geolocation'
-      preLoaderRoute: typeof AuthenticatedDashboardGeolocationRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
     '/_authenticated/dashboard/accounts': {
       id: '/_authenticated/dashboard/accounts'
       path: '/accounts'
@@ -169,7 +145,6 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardAccountsRoute: typeof AuthenticatedDashboardAccountsRoute
-  AuthenticatedDashboardGeolocationRoute: typeof AuthenticatedDashboardGeolocationRoute
   AuthenticatedDashboardLocationsRoute: typeof AuthenticatedDashboardLocationsRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
 }
@@ -177,8 +152,6 @@ interface AuthenticatedDashboardRouteChildren {
 const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
   {
     AuthenticatedDashboardAccountsRoute: AuthenticatedDashboardAccountsRoute,
-    AuthenticatedDashboardGeolocationRoute:
-      AuthenticatedDashboardGeolocationRoute,
     AuthenticatedDashboardLocationsRoute: AuthenticatedDashboardLocationsRoute,
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   }
@@ -207,12 +180,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

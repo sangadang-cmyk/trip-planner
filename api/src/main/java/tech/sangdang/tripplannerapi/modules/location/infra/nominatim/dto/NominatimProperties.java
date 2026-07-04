@@ -5,5 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record NominatimProperties(
+    @JsonProperty("place_id") Long placeId,
     @JsonProperty("name") String name,
     @JsonProperty("addresstype") String addressType) {}

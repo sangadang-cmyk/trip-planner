@@ -11,7 +11,7 @@ import {
 
 type NavItem = {
   title: string
-  to: '/dashboard' | '/dashboard/accounts' | '/dashboard/geolocation' | '/dashboard/locations'
+  to: '/dashboard' | '/dashboard/accounts' | '/dashboard/locations'
   icon: LucideIcon
 }
 

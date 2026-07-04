@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { GlobeIcon, LayoutDashboardIcon, MapPinIcon, MapPinnedIcon, UsersIcon } from 'lucide-react'
+import { LayoutDashboardIcon, MapPinIcon, MapPinnedIcon, UsersIcon } from 'lucide-react'
 
 import { NavMain } from '@/components/dashboard/nav-main'
 import { NavUser } from '@/components/dashboard/nav-user'
@@ -23,11 +23,6 @@ const navItems = [
     title: 'Accounts',
     to: '/dashboard/accounts' as const,
     icon: UsersIcon,
-  },
-  {
-    title: 'Geolocation',
-    to: '/dashboard/geolocation' as const,
-    icon: GlobeIcon,
   },
   {
     title: 'Locations',

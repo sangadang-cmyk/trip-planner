@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon } from 'lucide-react'
 import { useState } from 'react'
 
@@ -15,57 +15,17 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  getAdminCitiesOptions,
-  getAdminCountriesOptions,
   getAdminLocationsQueryKey,
   postAdminLocationsManualMutation,
 } from '@/generated/api/@tanstack/react-query.gen'
-
-const LOOKUP_PAGE_SIZE = 100
-
-function parseImages(value: string) {
-  return value
-    .split(',')
-    .map((image) => image.trim())
-    .filter(Boolean)
-}
 
 export function CreateLocationDialog() {
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
-  const [countryId, setCountryId] = useState<string | null>(null)
-  const [cityId, setCityId] = useState<string | null>(null)
-  const [images, setImages] = useState('')
-
-  const { data: countriesData, isPending: isCountriesPending } = useQuery({
-    ...getAdminCountriesOptions({
-      query: {
-        page: 0,
-        size: LOOKUP_PAGE_SIZE,
-      },
-    }),
-    enabled: open,
-  })
-
-  const { data: citiesData, isPending: isCitiesPending } = useQuery({
-    ...getAdminCitiesOptions({
-      query: {
-        page: 0,
-        size: LOOKUP_PAGE_SIZE,
-        countryId: countryId ?? undefined,
-      },
-    }),
-    enabled: open && countryId !== null,
-  })
+  const [latitude, setLatitude] = useState('')
+  const [longitude, setLongitude] = useState('')
+  const [popularity, setPopularity] = useState('')
 
   const createLocationMutation = useMutation({
     ...postAdminLocationsManualMutation(),
@@ -78,31 +38,22 @@ export function CreateLocationDialog() {
     },
   })
 
-  const countries = countriesData?.content ?? []
-  const cities = citiesData?.content ?? []
-
   function resetForm() {
     setName('')
-    setCountryId(null)
-    setCityId(null)
-    setImages('')
+    setLatitude('')
+    setLongitude('')
+    setPopularity('')
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!countryId || !cityId) {
-      return
-    }
-
-    const parsedImages = parseImages(images)
-
     createLocationMutation.mutate({
       body: {
         name,
-        countryId,
-        cityId,
-        images: parsedImages.length > 0 ? parsedImages : undefined,
+        latitude: latitude ? Number(latitude) : undefined,
+        longitude: longitude ? Number(longitude) : undefined,
+        popularity: popularity ? Number(popularity) : undefined,
       },
     })
   }
@@ -114,11 +65,6 @@ export function CreateLocationDialog() {
       resetForm()
       createLocationMutation.reset()
     }
-  }
-
-  function handleCountryChange(value: string | null) {
-    setCountryId(value)
-    setCityId(null)
   }
 
   return (
@@ -146,72 +92,34 @@ export function CreateLocationDialog() {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="location-country">Country</Label>
-            <Select
-              value={countryId}
-              onValueChange={handleCountryChange}
-              disabled={isCountriesPending}
-              items={countries.map((country) => ({
-                label: country.name,
-                value: country.id,
-              }))}
-            >
-              <SelectTrigger id="location-country" className="w-full">
-                <SelectValue placeholder="Select a country" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {countries.map((country) => (
-                    <SelectItem key={country.id} value={country.id}>
-                      {country.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="location-city">City</Label>
-            <Select
-              value={cityId}
-              onValueChange={setCityId}
-              disabled={countryId === null || isCitiesPending}
-              items={cities.map((city) => ({
-                label: city.name,
-                value: city.id,
-              }))}
-            >
-              <SelectTrigger id="location-city" className="w-full">
-                <SelectValue
-                  placeholder={
-                    countryId === null
-                      ? 'Select a country first'
-                      : 'Select a city'
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {cities.map((city) => (
-                    <SelectItem key={city.id} value={city.id}>
-                      {city.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="location-images">Images</Label>
+            <Label htmlFor="location-latitude">Latitude</Label>
             <Input
-              id="location-images"
-              value={images}
-              onChange={(event) => setImages(event.target.value)}
-              placeholder="https://example.com/photo.jpg"
+              id="location-latitude"
+              inputMode="decimal"
+              value={latitude}
+              onChange={(event) => setLatitude(event.target.value)}
+              placeholder="40.7829"
             />
-            <p className="text-xs text-muted-foreground">
-              Separate multiple image URLs with commas.
-            </p>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="location-longitude">Longitude</Label>
+            <Input
+              id="location-longitude"
+              inputMode="decimal"
+              value={longitude}
+              onChange={(event) => setLongitude(event.target.value)}
+              placeholder="-73.9654"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="location-popularity">Popularity</Label>
+            <Input
+              id="location-popularity"
+              inputMode="numeric"
+              value={popularity}
+              onChange={(event) => setPopularity(event.target.value)}
+              placeholder="0"
+            />
           </div>
           {createLocationMutation.isError ? (
             <p className="text-sm text-destructive">
@@ -227,14 +135,7 @@ export function CreateLocationDialog() {
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={
-                createLocationMutation.isPending ||
-                countryId === null ||
-                cityId === null
-              }
-            >
+            <Button type="submit" disabled={createLocationMutation.isPending}>
               {createLocationMutation.isPending ? 'Creating…' : 'Create location'}
             </Button>
           </DialogFooter>
