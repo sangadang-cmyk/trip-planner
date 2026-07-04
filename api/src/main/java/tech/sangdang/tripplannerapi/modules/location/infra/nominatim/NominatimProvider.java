@@ -9,13 +9,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import tech.sangdang.tripplannerapi.modules.location.domain.GeolocationSearchResult;
+import tech.sangdang.tripplannerapi.modules.location.domain.port.GeolocationPolygonPort;
 import tech.sangdang.tripplannerapi.modules.location.domain.port.GeolocationSearchPort;
 import tech.sangdang.tripplannerapi.modules.location.infra.nominatim.dto.NominatimFeatureCollection;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class NominatimProvider implements GeolocationSearchPort {
+public class NominatimProvider implements GeolocationSearchPort, GeolocationPolygonPort {
   private final RestClient nominatimRestClient;
   private final NominatimResponseMapper nominatimResponseMapper;
 
@@ -34,6 +35,34 @@ public class NominatimProvider implements GeolocationSearchPort {
         combinedResults.size(),
         query);
     return combinedResults;
+  }
+
+  @Override
+  public String fetchPolygonGeoJson(String osmType, Long osmId) {
+    String osmIds = NominatimUtils.formatOsmIds(osmType, osmId);
+    log.info("Fetching Nominatim polygon GeoJSON for osmIds={}", osmIds);
+
+    String response =
+        nominatimRestClient
+            .get()
+            .uri(
+                uriBuilder ->
+                    uriBuilder
+                        .path("/lookup")
+                        .queryParam("osm_ids", osmIds)
+                        .queryParam("format", "geojson")
+                        .queryParam("polygon_geojson", 1)
+                        .queryParam("limit", 1)
+                        .build())
+            .retrieve()
+            .body(String.class);
+
+    if (response == null || response.isBlank()) {
+      log.warn("Nominatim returned an empty polygon response for osmIds={}", osmIds);
+      return null;
+    }
+
+    return response;
   }
 
   private List<GeolocationSearchResult> searchByFeatureType(String query, String featureType) {

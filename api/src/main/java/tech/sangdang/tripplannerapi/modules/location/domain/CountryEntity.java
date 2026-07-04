@@ -22,6 +22,12 @@ public class CountryEntity {
 
   @Id private Long id;
 
+  @Column(nullable = false, name = "osm_type", length = 16)
+  private String osmType;
+
+  @Column(nullable = false, name = "osm_id")
+  private Long osmId;
+
   @Column(nullable = false, name = "name", length = 255)
   private String name;
 }

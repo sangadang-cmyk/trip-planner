@@ -1,6 +1,7 @@
 package tech.sangdang.tripplannerapi.modules.location.app.impl;
 
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,7 +24,12 @@ public class GeolocationCatalogServiceImpl implements GeolocationCatalogService 
   @Transactional
   public void cacheSearchResults(List<GeolocationSearchResult> results) {
     for (GeolocationSearchResult result : results) {
-      if (result.id() == null || result.name() == null || result.name().isBlank()) {
+      if (result.id() == null
+          || result.osmType() == null
+          || result.osmType().isBlank()
+          || result.osmId() == null
+          || result.name() == null
+          || result.name().isBlank()) {
         continue;
       }
 
@@ -39,30 +45,74 @@ public class GeolocationCatalogServiceImpl implements GeolocationCatalogService 
     countryRepository
         .findById(result.id())
         .ifPresentOrElse(
-            existing -> updateNameIfChanged(existing, result.name()),
+            existing -> updateCountryIfChanged(existing, result),
             () ->
                 countryRepository.save(
-                    CountryEntity.builder().id(result.id()).name(result.name()).build()));
+                    CountryEntity.builder()
+                        .id(result.id())
+                        .osmType(result.osmType())
+                        .osmId(result.osmId())
+                        .name(result.name())
+                        .build()));
   }
 
   private void upsertCity(GeolocationSearchResult result) {
     cityRepository
         .findById(result.id())
         .ifPresentOrElse(
-            existing -> updateNameIfChanged(existing, result.name()),
-            () -> cityRepository.save(CityEntity.builder().id(result.id()).name(result.name()).build()));
+            existing -> updateCityIfChanged(existing, result),
+            () ->
+                cityRepository.save(
+                    CityEntity.builder()
+                        .id(result.id())
+                        .osmType(result.osmType())
+                        .osmId(result.osmId())
+                        .name(result.name())
+                        .build()));
   }
 
-  private void updateNameIfChanged(CountryEntity country, String name) {
-    if (!name.equals(country.getName())) {
-      country.setName(name);
+  private void updateCountryIfChanged(CountryEntity country, GeolocationSearchResult result) {
+    boolean changed = false;
+
+    if (!result.name().equals(country.getName())) {
+      country.setName(result.name());
+      changed = true;
+    }
+
+    if (!Objects.equals(result.osmId(), country.getOsmId())) {
+      country.setOsmId(result.osmId());
+      changed = true;
+    }
+
+    if (!Objects.equals(result.osmType(), country.getOsmType())) {
+      country.setOsmType(result.osmType());
+      changed = true;
+    }
+
+    if (changed) {
       countryRepository.save(country);
     }
   }
 
-  private void updateNameIfChanged(CityEntity city, String name) {
-    if (!name.equals(city.getName())) {
-      city.setName(name);
+  private void updateCityIfChanged(CityEntity city, GeolocationSearchResult result) {
+    boolean changed = false;
+
+    if (!result.name().equals(city.getName())) {
+      city.setName(result.name());
+      changed = true;
+    }
+
+    if (!Objects.equals(result.osmId(), city.getOsmId())) {
+      city.setOsmId(result.osmId());
+      changed = true;
+    }
+
+    if (!Objects.equals(result.osmType(), city.getOsmType())) {
+      city.setOsmType(result.osmType());
+      changed = true;
+    }
+
+    if (changed) {
       cityRepository.save(city);
     }
   }

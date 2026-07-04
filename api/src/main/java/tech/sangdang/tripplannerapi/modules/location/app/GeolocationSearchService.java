@@ -5,4 +5,6 @@ import org.openapitools.model.GeolocationSearchResult;
 
 public interface GeolocationSearchService {
   List<GeolocationSearchResult> search(String query);
+
+  String getPolygonGeoJson(Long osmId);
 }

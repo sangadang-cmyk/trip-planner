@@ -279,6 +279,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /geolocation/polygon:
+    get:
+      summary: Get polygon GeoJSON for a cached OSM place
+      tags:
+        - Geolocation
+      parameters:
+        - name: osmId
+          in: query
+          required: true
+          description: OpenStreetMap id stored for a cached country or city
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Polygon GeoJSON from Nominatim
+          content:
+            application/geo+json:
+              schema:
+                type: string
+        '404':
+          description: Cached place or polygon not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /admin/locations:
     get:
       summary: List all locations (paginated)

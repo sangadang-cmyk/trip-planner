@@ -25,13 +25,19 @@ public class NominatimResponseMapper {
                 result.addressType() != null
                     && SUPPORTED_ADDRESS_TYPES.contains(result.addressType()))
         .filter(result -> result.id() != null)
+        .filter(result -> result.osmType() != null && !result.osmType().isBlank())
+        .filter(result -> result.osmId() != null)
         .filter(result -> result.name() != null && !result.name().isBlank())
         .toList();
   }
 
   private GeolocationSearchResult mapFeature(NominatimFeature feature) {
     var properties = feature.properties();
-    if (properties == null || properties.placeId() == null) {
+    if (properties == null
+        || properties.placeId() == null
+        || properties.osmType() == null
+        || properties.osmType().isBlank()
+        || properties.osmId() == null) {
       return null;
     }
 
@@ -47,6 +53,8 @@ public class NominatimResponseMapper {
 
     return new GeolocationSearchResult(
         properties.placeId(),
+        properties.osmType(),
+        properties.osmId(),
         properties.name(),
         properties.addressType(),
         latitude,
