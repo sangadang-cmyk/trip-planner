@@ -5,8 +5,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import lombok.RequiredArgsConstructor;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.openapitools.model.CreateTripDestinationRequest;
 import org.openapitools.model.CreateTripRequest;
 import org.openapitools.model.TripDestinationResponse;
@@ -21,7 +23,7 @@ import tech.sangdang.tripplannerapi.modules.location.domain.repository.LocationR
 import tech.sangdang.tripplannerapi.modules.trip.app.TripManagementService;
 import tech.sangdang.tripplannerapi.modules.trip.app.mapper.TripDestinationMapper;
 import tech.sangdang.tripplannerapi.modules.trip.app.mapper.TripMapper;
-import tech.sangdang.tripplannerapi.modules.trip.app.utils.TripDestinationDayNumbers;
+import tech.sangdang.tripplannerapi.modules.trip.app.utils.TripDestinationVisitDates;
 import tech.sangdang.tripplannerapi.modules.trip.app.utils.TripThumbnailResolver;
 import tech.sangdang.tripplannerapi.modules.trip.domain.TripDestinationEntity;
 import tech.sangdang.tripplannerapi.modules.trip.domain.TripEntity;
@@ -102,12 +104,13 @@ public class TripManagementServiceImpl implements TripManagementService {
   @Override
   public TripDestinationResponse createTripDestination(
       UUID tripId, CreateTripDestinationRequest request, UUID userId) {
-    int dayNumber = TripDestinationDayNumbers.resolveDayNumber(request.getDayNumber());
-
     TripEntity trip =
         tripRepository
             .findByIdAndUserId(tripId, userId)
             .orElseThrow(() -> new NotFoundException("Trip not found"));
+
+    TripDestinationVisitDates.validateVisitDate(
+        unwrapVisitDate(request.getVisitDate()), trip.getStartDate(), trip.getEndDate());
 
     LocationEntity location =
         locationRepository
@@ -124,7 +127,7 @@ public class TripManagementServiceImpl implements TripManagementService {
       }
 
       destination.setDeletedDate(null);
-      destination.setDayNumber(dayNumber);
+      destination.setVisitDate(unwrapVisitDate(request.getVisitDate()));
       destination.setSortOrder(request.getSortOrder());
       destination.setNotes(request.getNotes());
       return tripDestinationMapper.toResponse(tripDestinationRepository.save(destination));
@@ -134,7 +137,7 @@ public class TripManagementServiceImpl implements TripManagementService {
         TripDestinationEntity.builder()
             .trip(trip)
             .location(location)
-            .dayNumber(dayNumber)
+            .visitDate(unwrapVisitDate(request.getVisitDate()))
             .sortOrder(request.getSortOrder())
             .notes(request.getNotes())
             .build();
@@ -157,9 +160,16 @@ public class TripManagementServiceImpl implements TripManagementService {
             .findByIdAndTrip_IdAndDeletedDateIsNull(destinationId, tripId)
             .orElseThrow(() -> new NotFoundException("Trip destination not found"));
 
-    if (request.getDayNumber() != null) {
-      TripDestinationDayNumbers.validateDayNumber(request.getDayNumber());
-      destination.setDayNumber(request.getDayNumber());
+    if (request.getVisitDate() != null) {
+      if (request.getVisitDate().isPresent()) {
+        TripDestinationVisitDates.validateVisitDate(
+            request.getVisitDate().get(),
+            destination.getTrip().getStartDate(),
+            destination.getTrip().getEndDate());
+        destination.setVisitDate(request.getVisitDate().get());
+      } else {
+        destination.setVisitDate(null);
+      }
     }
     if (request.getSortOrder() != null) {
       destination.setSortOrder(request.getSortOrder());
@@ -187,6 +197,11 @@ public class TripManagementServiceImpl implements TripManagementService {
   }
 
   @Override
+  public List<UUID> getTripIdsByLocationId(UUID locationId, UUID userId) {
+    return tripDestinationRepository.findTripIdsByLocationIdAndUserId(locationId, userId);
+  }
+
+  @Override
   public TripResponse createTrip(CreateTripRequest request, UUID userId) {
     if (request.getEndDate().isBefore(request.getStartDate())) {
       throw new BadRequestException("End date must be on or after start date");
@@ -202,5 +217,13 @@ public class TripManagementServiceImpl implements TripManagementService {
             .build();
 
     return tripMapper.toResponse(tripRepository.save(trip));
+  }
+
+  private static LocalDate unwrapVisitDate(JsonNullable<LocalDate> visitDate) {
+    if (visitDate == null || !visitDate.isPresent()) {
+      return null;
+    }
+
+    return visitDate.get();
   }
 }

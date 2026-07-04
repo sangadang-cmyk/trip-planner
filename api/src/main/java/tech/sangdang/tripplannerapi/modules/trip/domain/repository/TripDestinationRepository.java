@@ -17,7 +17,7 @@ public interface TripDestinationRepository
       """
       SELECT td FROM TripDestinationEntity td
       WHERE td.trip.id = :tripId AND td.deletedDate IS NULL
-      ORDER BY CASE WHEN td.dayNumber = -1 THEN 1 ELSE 0 END, td.dayNumber ASC, td.sortOrder ASC
+      ORDER BY CASE WHEN td.visitDate IS NULL THEN 1 ELSE 0 END, td.visitDate ASC, td.sortOrder ASC
       """)
   List<TripDestinationEntity> findActiveByTripIdOrdered(@Param("tripId") UUID tripId);
 
@@ -27,10 +27,20 @@ public interface TripDestinationRepository
 
   @Query(
       """
+      SELECT DISTINCT td.trip.id FROM TripDestinationEntity td
+      WHERE td.location.id = :locationId
+        AND td.deletedDate IS NULL
+        AND td.trip.userId = :userId
+      """)
+  List<UUID> findTripIdsByLocationIdAndUserId(
+      @Param("locationId") UUID locationId, @Param("userId") UUID userId);
+
+  @Query(
+      """
       SELECT td.trip.id AS tripId, td.location.id AS locationId
       FROM TripDestinationEntity td
       WHERE td.trip.id IN :tripIds AND td.deletedDate IS NULL
-      ORDER BY td.trip.id, CASE WHEN td.dayNumber = -1 THEN 1 ELSE 0 END, td.dayNumber ASC, td.sortOrder ASC
+      ORDER BY td.trip.id, CASE WHEN td.visitDate IS NULL THEN 1 ELSE 0 END, td.visitDate ASC, td.sortOrder ASC
       """)
   List<TripDestinationThumbnailSource> findThumbnailSourcesByTripIdIn(
       @Param("tripIds") Collection<UUID> tripIds);

@@ -2,8 +2,6 @@ import type { TripResponse } from '@/generated/api/types.gen'
 
 export type TripStatus = 'Upcoming' | 'Ongoing' | 'Completed'
 
-export const UNSORTED_DAY_NUMBER = -1
-
 export function parseIsoDateLocal(isoDate: string) {
   const [year, month, day] = isoDate.split('-').map(Number)
 
@@ -23,47 +21,24 @@ export function getTripDayDates(startDate: string, endDate: string) {
   return dates
 }
 
-export function getDayNumberFromTripDate(startDate: string, selectedDate: Date) {
-  const start = parseIsoDateLocal(startDate)
-  const millisecondsPerDay = 24 * 60 * 60 * 1000
+export function toIsoDateString(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
 
-  return (
-    Math.round((selectedDate.getTime() - start.getTime()) / millisecondsPerDay) +
-    1
-  )
+  return `${year}-${month}-${day}`
 }
 
-export function getTripDateFromDayNumber(startDate: string, dayNumber: number) {
-  if (dayNumber === UNSORTED_DAY_NUMBER) {
-    return null
-  }
-
-  const date = parseIsoDateLocal(startDate)
-  date.setDate(date.getDate() + dayNumber - 1)
-
-  return date
-}
-
-export function formatDestinationDayLabel(
-  dayNumber: number,
-  tripStartDate?: string,
-) {
-  if (dayNumber === UNSORTED_DAY_NUMBER) {
+export function formatDestinationDayLabel(visitDate?: string | null) {
+  if (!visitDate) {
     return 'Unsorted'
   }
 
-  if (tripStartDate) {
-    const date = getTripDateFromDayNumber(tripStartDate, dayNumber)
-    if (date) {
-      return new Intl.DateTimeFormat(undefined, {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      }).format(date)
-    }
-  }
-
-  return `Day ${dayNumber}`
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  }).format(parseIsoDateLocal(visitDate))
 }
 
 function toLocalDateString(date: Date) {
@@ -101,7 +76,7 @@ export function formatTripDateRange(startDate: string, endDate: string) {
     year: 'numeric',
   })
 
-  return `${formatter.format(new Date(startDate))} – ${formatter.format(new Date(endDate))}`
+  return `${formatter.format(parseIsoDateLocal(startDate))} – ${formatter.format(parseIsoDateLocal(endDate))}`
 }
 
 export function getTripStatus(startDate: string, endDate: string): TripStatus {

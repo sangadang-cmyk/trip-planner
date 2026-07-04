@@ -340,6 +340,7 @@ export function MapLocationDetailPanel({
               </Button>
               <AddLocationToTripDialog
                 location={location}
+                locationId={location.id}
                 open={addToTripOpen}
                 onOpenChange={setAddToTripOpen}
               />

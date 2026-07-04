@@ -13,7 +13,7 @@ public class TripDestinationMapper {
         .id(destination.getId())
         .tripId(destination.getTrip().getId())
         .locationId(destination.getLocation().getId())
-        .dayNumber(destination.getDayNumber())
+        .visitDate(destination.getVisitDate())
         .sortOrder(destination.getSortOrder())
         .notes(destination.getNotes())
         .createdAt(destination.getCreatedAt().atOffset(ZoneOffset.UTC))

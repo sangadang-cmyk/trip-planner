@@ -868,6 +868,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /user/trips/by-location/{locationId}:
+    get:
+      summary: List trip IDs that contain a location
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: locationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Trip IDs for the current user that contain the location
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /user/trips/{id}:
     get:
       summary: Get a trip by ID
@@ -1702,12 +1738,12 @@ components:
         locationId:
           type: string
           format: uuid
-        dayNumber:
-          type: integer
-          minimum: -1
-          default: -1
+        visitDate:
+          type: string
+          format: date
+          nullable: true
           description: >
-            Itinerary day for this destination. Use -1 for unsorted destinations.
+            Date this destination is scheduled for. Omit or set null for unsorted destinations.
         sortOrder:
           type: integer
           minimum: 0
@@ -1717,11 +1753,12 @@ components:
     UpdateTripDestinationRequest:
       type: object
       properties:
-        dayNumber:
-          type: integer
-          minimum: -1
+        visitDate:
+          type: string
+          format: date
+          nullable: true
           description: >
-            Itinerary day for this destination. Use -1 for unsorted destinations.
+            Date this destination is scheduled for. Set null to mark as unsorted.
         sortOrder:
           type: integer
           minimum: 0
@@ -1734,7 +1771,6 @@ components:
         - id
         - tripId
         - locationId
-        - dayNumber
         - sortOrder
         - createdAt
         - updatedAt
@@ -1748,9 +1784,11 @@ components:
         locationId:
           type: string
           format: uuid
-        dayNumber:
-          type: integer
-          description: -1 when the destination is not assigned to a day yet.
+        visitDate:
+          type: string
+          format: date
+          nullable: true
+          description: Null when the destination is not assigned to a date yet.
         sortOrder:
           type: integer
         notes:

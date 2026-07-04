@@ -26,5 +26,7 @@ public interface TripManagementService {
 
   void deleteTripDestination(UUID tripId, UUID destinationId, UUID userId);
 
+  List<UUID> getTripIdsByLocationId(UUID locationId, UUID userId);
+
   TripResponse createTrip(CreateTripRequest request, UUID userId);
 }

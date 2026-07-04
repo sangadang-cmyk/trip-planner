@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -30,7 +31,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 @Entity
 public class TripDestinationEntity {
   public static final String TABLE = "trip_destinations";
-  public static final int UNSORTED_DAY_NUMBER = -1;
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -52,9 +52,8 @@ public class TripDestinationEntity {
   @JoinColumn(nullable = false, name = "location_id")
   private LocationEntity location;
 
-  @Column(nullable = false, name = "day_number")
-  @Builder.Default
-  private int dayNumber = UNSORTED_DAY_NUMBER;
+  @Column(name = "visit_date")
+  private LocalDate visitDate;
 
   @Column(nullable = false, name = "sort_order")
   private int sortOrder;

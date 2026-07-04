@@ -89,6 +89,14 @@ public class TripManagementController implements TripManagementApi {
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
+  @Override
+  public ResponseEntity<List<UUID>> userTripsByLocationLocationIdGet(UUID locationId) {
+    AccountUserDetails userDetails = currentUser();
+    return ResponseEntity.ok(
+        tripManagementService.getTripIdsByLocationId(
+            locationId, userDetails.getAccount().getId()));
+  }
+
   private AccountUserDetails currentUser() {
     return (AccountUserDetails)
         SecurityContextHolder.getContext().getAuthentication().getPrincipal();
