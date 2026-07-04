@@ -44,9 +44,9 @@ public class GeolocationSearchServiceImpl implements GeolocationSearchService {
   public String getPolygonGeoJson(Long osmId) {
     String osmType =
         countryRepository
-            .findByOsmId(osmId)
+            .findById(osmId)
             .map(CountryEntity::getOsmType)
-            .or(() -> cityRepository.findByOsmId(osmId).map(CityEntity::getOsmType))
+            .or(() -> cityRepository.findById(osmId).map(CityEntity::getOsmType))
             .orElseThrow(() -> new NotFoundException("Geolocation place not found"));
 
     String polygonGeoJson = geolocationPolygonPort.fetchPolygonGeoJson(osmType, osmId);

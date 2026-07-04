@@ -1396,11 +1396,11 @@ components:
     GeolocationSearchResult:
       type: object
       required:
-        - id
+        - osmId
         - name
         - addressType
       properties:
-        id:
+        osmId:
           type: integer
           format: int64
         name:

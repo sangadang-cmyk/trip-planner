@@ -43,6 +43,7 @@ import {
   formatDestinationDayLabel,
   formatTripDateRange,
   getTripStatus,
+  isVisitDateUnset,
   tripStatusVariant,
 } from '@/lib/trip'
 import { cn } from '@/lib/utils'
@@ -72,7 +73,7 @@ function DestinationRow({
   onSelectLocation,
   onDelete,
 }: DestinationRowProps) {
-  const isUnsorted = destination.visitDate == null
+  const isUnsorted = isVisitDateUnset(destination.visitDate)
 
   return (
     <li
@@ -227,7 +228,7 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
     const unsorted: TripDestinationWithLocation[] = []
 
     for (const entry of destinations) {
-      if (entry.destination.visitDate == null) {
+      if (isVisitDateUnset(entry.destination.visitDate)) {
         unsorted.push(entry)
       } else {
         sorted.push(entry)

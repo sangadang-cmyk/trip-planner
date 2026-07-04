@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css'
 
 import { SidebarMenuTrigger } from '@/components/dashboard/sidebar-menu-trigger'
 import { MapController } from '@/components/map/map-controller'
+import { MapGeolocationPolygonLayer } from '@/components/map/map-geolocation-polygon-layer'
 import { MapLocateButton } from '@/components/map/map-locate-button'
 import { MapLocationDetailPanel } from '@/components/map/map-location-detail-panel'
 import { MapLocationLayer } from '@/components/map/map-location-layer'
@@ -14,6 +15,7 @@ import { MapTripQuickAccess } from '@/components/map/map-trip-quick-access'
 import { MapZoomControls } from '@/components/map/map-zoom-controls'
 import type { LocationResponse } from '@/generated/api/types.gen'
 import { useMapBoundingBoxLocations } from '@/hooks/use-map-bounding-box-locations'
+import { useMapGeolocationSelection } from '@/hooks/use-map-geolocation-selection'
 import { getMapLocationKey } from '@/lib/map-location'
 import { cn } from '@/lib/utils'
 
@@ -33,6 +35,8 @@ export function TripMapView({ className }: TripMapViewProps) {
   const [isDetailOpen, setIsDetailOpen] = useState(false)
 
   const { locations, isPending } = useMapBoundingBoxLocations(map)
+  const { polygonGeoJson, isLoadingPolygon, selectSearchResult } =
+    useMapGeolocationSelection(map)
 
   const handleMapReady = useCallback((nextMap: Map) => {
     setMap(nextMap)
@@ -66,6 +70,7 @@ export function TripMapView({ className }: TripMapViewProps) {
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <MapController onMapReady={handleMapReady} />
+        <MapGeolocationPolygonLayer data={polygonGeoJson} />
         <MapLocationLayer
           locations={locations}
           selectedId={selectedMarkerId}
@@ -79,7 +84,11 @@ export function TripMapView({ className }: TripMapViewProps) {
             <SidebarMenuTrigger />
             <MapTripQuickAccess />
           </div>
-          <MapSearchBar className="w-[min(100vw-5rem,24rem)]" />
+          <MapSearchBar
+            className="w-[min(100vw-5rem,24rem)]"
+            onSelectResult={selectSearchResult}
+            isSelecting={isLoadingPolygon}
+          />
         </div>
 
         {isPending ? (

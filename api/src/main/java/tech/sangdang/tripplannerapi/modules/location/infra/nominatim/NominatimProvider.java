@@ -114,6 +114,6 @@ public class NominatimProvider implements GeolocationSearchPort, GeolocationPoly
   }
 
   private String resultKey(GeolocationSearchResult result) {
-    return result.addressType() + '|' + result.id();
+    return result.addressType() + '|' + result.osmId();
   }
 }

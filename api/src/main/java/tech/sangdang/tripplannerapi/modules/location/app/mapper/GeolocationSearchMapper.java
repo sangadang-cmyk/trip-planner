@@ -9,7 +9,7 @@ public class GeolocationSearchMapper {
   public GeolocationSearchResult toResponse(
       tech.sangdang.tripplannerapi.modules.location.domain.GeolocationSearchResult result) {
     return GeolocationSearchResult.builder()
-        .id(result.id())
+        .osmId(result.osmId())
         .name(result.name())
         .addressType(
             GeolocationSearchResult.AddressTypeEnum.fromValue(result.addressType()))

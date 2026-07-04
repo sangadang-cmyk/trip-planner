@@ -24,8 +24,7 @@ public class GeolocationCatalogServiceImpl implements GeolocationCatalogService 
   @Transactional
   public void cacheSearchResults(List<GeolocationSearchResult> results) {
     for (GeolocationSearchResult result : results) {
-      if (result.id() == null
-          || result.osmType() == null
+      if (result.osmType() == null
           || result.osmType().isBlank()
           || result.osmId() == null
           || result.name() == null
@@ -43,30 +42,28 @@ public class GeolocationCatalogServiceImpl implements GeolocationCatalogService 
 
   private void upsertCountry(GeolocationSearchResult result) {
     countryRepository
-        .findById(result.id())
+        .findById(result.osmId())
         .ifPresentOrElse(
             existing -> updateCountryIfChanged(existing, result),
             () ->
                 countryRepository.save(
                     CountryEntity.builder()
-                        .id(result.id())
-                        .osmType(result.osmType())
                         .osmId(result.osmId())
+                        .osmType(result.osmType())
                         .name(result.name())
                         .build()));
   }
 
   private void upsertCity(GeolocationSearchResult result) {
     cityRepository
-        .findById(result.id())
+        .findById(result.osmId())
         .ifPresentOrElse(
             existing -> updateCityIfChanged(existing, result),
             () ->
                 cityRepository.save(
                     CityEntity.builder()
-                        .id(result.id())
-                        .osmType(result.osmType())
                         .osmId(result.osmId())
+                        .osmType(result.osmType())
                         .name(result.name())
                         .build()));
   }
@@ -76,11 +73,6 @@ public class GeolocationCatalogServiceImpl implements GeolocationCatalogService 
 
     if (!result.name().equals(country.getName())) {
       country.setName(result.name());
-      changed = true;
-    }
-
-    if (!Objects.equals(result.osmId(), country.getOsmId())) {
-      country.setOsmId(result.osmId());
       changed = true;
     }
 
@@ -99,11 +91,6 @@ public class GeolocationCatalogServiceImpl implements GeolocationCatalogService 
 
     if (!result.name().equals(city.getName())) {
       city.setName(result.name());
-      changed = true;
-    }
-
-    if (!Objects.equals(result.osmId(), city.getOsmId())) {
-      city.setOsmId(result.osmId());
       changed = true;
     }
 

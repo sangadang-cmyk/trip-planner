@@ -2,9 +2,60 @@ import type { TripResponse } from '@/generated/api/types.gen'
 
 export type TripStatus = 'Upcoming' | 'Ongoing' | 'Completed'
 
-export function parseIsoDateLocal(isoDate: string) {
-  const [year, month, day] = isoDate.split('-').map(Number)
+type DateInput =
+  | string
+  | Date
+  | [number, number, number]
+  | { year: number; month: number; day: number }
 
+function unwrapVisitDateValue(visitDate: unknown): DateInput | null {
+  if (visitDate == null) {
+    return null
+  }
+
+  if (
+    typeof visitDate === 'object' &&
+    !(visitDate instanceof Date) &&
+    !Array.isArray(visitDate) &&
+    'present' in visitDate
+  ) {
+    const wrapped = visitDate as { present?: boolean; value?: unknown }
+    if (!wrapped.present) {
+      return null
+    }
+
+    return unwrapVisitDateValue(wrapped.value)
+  }
+
+  return visitDate as DateInput
+}
+
+export function isVisitDateUnset(visitDate: unknown): visitDate is null | undefined {
+  return unwrapVisitDateValue(visitDate) == null
+}
+
+export function parseIsoDateLocal(isoDate: unknown) {
+  const value = unwrapVisitDateValue(isoDate)
+
+  if (value == null) {
+    throw new TypeError('Invalid date value')
+  }
+
+  if (value instanceof Date) {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate())
+  }
+
+  if (Array.isArray(value)) {
+    const [year, month, day] = value
+    return new Date(year, month - 1, day)
+  }
+
+  if (typeof value === 'object') {
+    const { year, month, day } = value
+    return new Date(year, month - 1, day)
+  }
+
+  const [year, month, day] = value.split('-').map(Number)
   return new Date(year, month - 1, day)
 }
 
@@ -29,8 +80,8 @@ export function toIsoDateString(date: Date) {
   return `${year}-${month}-${day}`
 }
 
-export function formatDestinationDayLabel(visitDate?: string | null) {
-  if (!visitDate) {
+export function formatDestinationDayLabel(visitDate?: unknown) {
+  if (isVisitDateUnset(visitDate)) {
     return 'Unsorted'
   }
 

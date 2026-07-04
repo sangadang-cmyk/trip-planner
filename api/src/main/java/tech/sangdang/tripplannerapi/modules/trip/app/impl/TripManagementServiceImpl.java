@@ -160,16 +160,15 @@ public class TripManagementServiceImpl implements TripManagementService {
             .findByIdAndTrip_IdAndDeletedDateIsNull(destinationId, tripId)
             .orElseThrow(() -> new NotFoundException("Trip destination not found"));
 
-    if (request.getVisitDate() != null) {
-      if (request.getVisitDate().isPresent()) {
+    if (request.getVisitDate() != null && request.getVisitDate().isPresent()) {
+      LocalDate visitDate = request.getVisitDate().get();
+      if (visitDate != null) {
         TripDestinationVisitDates.validateVisitDate(
-            request.getVisitDate().get(),
+            visitDate,
             destination.getTrip().getStartDate(),
             destination.getTrip().getEndDate());
-        destination.setVisitDate(request.getVisitDate().get());
-      } else {
-        destination.setVisitDate(null);
       }
+      destination.setVisitDate(visitDate);
     }
     if (request.getSortOrder() != null) {
       destination.setSortOrder(request.getSortOrder());

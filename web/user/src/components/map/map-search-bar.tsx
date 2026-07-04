@@ -15,17 +15,23 @@ const SEARCH_DEBOUNCE_MS = 1000
 
 type MapSearchBarProps = {
   className?: string
+  onSelectResult?: (result: GeolocationSearchResult) => void
+  isSelecting?: boolean
 }
 
 function getResultKey(result: GeolocationSearchResult, index: number) {
-  return `${result.addressType}-${result.name}-${index}`
+  return `${result.addressType}-${result.osmId}-${index}`
 }
 
 function formatAddressType(addressType: GeolocationSearchResult['addressType']) {
   return addressType === 'country' ? 'Country' : 'City'
 }
 
-export function MapSearchBar({ className }: MapSearchBarProps) {
+export function MapSearchBar({
+  className,
+  onSelectResult,
+  isSelecting = false,
+}: MapSearchBarProps) {
   const listboxId = useId()
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -135,7 +141,16 @@ export function MapSearchBar({ className }: MapSearchBarProps) {
             >
               {results.map((result, index) => (
                 <li key={getResultKey(result, index)}>
-                  <div className="flex w-full items-center gap-3 px-3 py-2.5 text-sm">
+                  <button
+                    type="button"
+                    disabled={isSelecting}
+                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/80 disabled:cursor-wait disabled:opacity-70"
+                    onClick={() => {
+                      onSelectResult?.(result)
+                      setQuery(result.name)
+                      setIsOpen(false)
+                    }}
+                  >
                     <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
                       {result.addressType === 'country' ? (
                         <GlobeIcon className="size-4" />
@@ -151,7 +166,7 @@ export function MapSearchBar({ className }: MapSearchBarProps) {
                     <Badge variant="secondary" className="shrink-0 capitalize">
                       {formatAddressType(result.addressType)}
                     </Badge>
-                  </div>
+                  </button>
                 </li>
               ))}
             </ul>

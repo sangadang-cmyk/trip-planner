@@ -18,7 +18,7 @@ import {
   putUserTripsByTripIdDestinationsByDestinationIdMutation,
 } from '@/generated/api/@tanstack/react-query.gen'
 import type { TripDestinationResponse } from '@/generated/api/types.gen'
-import { parseIsoDateLocal, toIsoDateString } from '@/lib/trip'
+import { isVisitDateUnset, parseIsoDateLocal, toIsoDateString } from '@/lib/trip'
 
 type DestinationDayPickerProps = {
   tripId: string
@@ -38,9 +38,9 @@ export function DestinationDayPicker({
 
   const tripStart = parseIsoDateLocal(tripStartDate)
   const tripEnd = parseIsoDateLocal(tripEndDate)
-  const selectedDate = destination.visitDate
-    ? parseIsoDateLocal(destination.visitDate)
-    : null
+  const selectedDate = isVisitDateUnset(destination.visitDate)
+    ? null
+    : parseIsoDateLocal(destination.visitDate)
 
   const updateDestinationMutation = useMutation({
     ...putUserTripsByTripIdDestinationsByDestinationIdMutation(),
@@ -114,7 +114,8 @@ export function DestinationDayPicker({
             size="sm"
             className="w-full"
             disabled={
-              updateDestinationMutation.isPending || destination.visitDate == null
+              updateDestinationMutation.isPending ||
+              isVisitDateUnset(destination.visitDate)
             }
             onClick={() => updateVisitDate(null)}
           >

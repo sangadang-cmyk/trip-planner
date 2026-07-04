@@ -20,13 +20,12 @@ import lombok.Setter;
 public class CityEntity {
   public static final String TABLE = "cities";
 
-  @Id private Long id;
+  @Id
+  @Column(name = "osm_id", nullable = false)
+  private Long osmId;
 
   @Column(nullable = false, name = "osm_type", length = 16)
   private String osmType;
-
-  @Column(nullable = false, name = "osm_id")
-  private Long osmId;
 
   @Column(nullable = false, name = "name", length = 255)
   private String name;

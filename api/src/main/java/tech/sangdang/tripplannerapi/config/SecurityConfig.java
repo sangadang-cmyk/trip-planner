@@ -38,7 +38,8 @@ public class SecurityConfig {
                                                 "/swagger-ui.html",
                                                 "/v3/api-docs/**",
                                                 "/public/**",
-                                                "/geolocation/**").permitAll()
+                                                "/geolocation/**",
+                                                "/geolocation/polygon").permitAll()
                                         .requestMatchers(
                                                 "/user/locations/bounding-box",
                                                 "/user/locations/{id}",
