@@ -21,16 +21,18 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useAuth } from '@/hooks/use-auth'
+import { useLoginFromSearch } from '@/hooks/use-login-from-search'
 
 export function NavUser() {
   const { isAuthenticated, signOut } = useAuth()
   const { isMobile } = useSidebar()
+  const loginSearch = useLoginFromSearch()
 
   if (!isAuthenticated) {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton render={<Link to="/login" />}>
+          <SidebarMenuButton render={<Link to="/login" search={loginSearch} />}>
             <LogInIcon />
             <span>Sign in</span>
           </SidebarMenuButton>

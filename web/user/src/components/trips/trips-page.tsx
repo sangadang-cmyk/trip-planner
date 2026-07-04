@@ -20,6 +20,7 @@ import {
   getUserTripsOptions,
 } from '@/generated/api/@tanstack/react-query.gen'
 import { useAuth } from '@/hooks/use-auth'
+import { useLoginFromSearch } from '@/hooks/use-login-from-search'
 import {
   formatTripDateRange,
   getTripAccent,
@@ -48,6 +49,7 @@ function TripsPageSkeleton() {
 
 export function TripsPage() {
   const { isAuthenticated } = useAuth()
+  const loginSearch = useLoginFromSearch()
   const [createTripOpen, setCreateTripOpen] = useState(false)
 
   const {
@@ -105,7 +107,7 @@ export function TripsPage() {
               Sign in to view and manage your trips.
             </p>
             <div className="flex gap-2">
-              <Button render={<Link to="/login" />}>Sign in</Button>
+              <Button render={<Link to="/login" search={loginSearch} />}>Sign in</Button>
               <Button variant="outline" render={<Link to="/register" />}>
                 Register
               </Button>

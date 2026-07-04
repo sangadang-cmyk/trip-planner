@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import {
   ArrowLeftIcon,
+  CalendarDaysIcon,
   CalendarIcon,
   ChevronRightIcon,
+  InboxIcon,
   MapIcon,
   MapPinIcon,
+  PencilIcon,
   Trash2Icon,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -15,6 +18,7 @@ import { SidebarMenuTrigger } from '@/components/dashboard/sidebar-menu-trigger'
 import { MapLocationDetailPanel } from '@/components/map/map-location-detail-panel'
 import { TripDestinationsMap } from '@/components/map/trip-destinations-map'
 import { DestinationDayPicker } from '@/components/trips/destination-day-picker'
+import { UpdateTripDialog } from '@/components/trips/update-trip-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -28,6 +32,7 @@ import {
 import { ResizableSplitPane } from '@/components/ui/resizable-split-pane'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
+  deleteUserTripsByIdMutation,
   deleteUserTripsByTripIdDestinationsByDestinationIdMutation,
   getUserTripsByIdOptions,
   getUserTripsByTripIdDestinationsQueryKey,
@@ -200,11 +205,18 @@ function TripDetailSkeleton() {
 
 export function TripDetailPage({ tripId }: TripDetailPageProps) {
   const queryClient = useQueryClient()
-  const [selectedLocation, setSelectedLocation] =
-    useState<LocationResponse | null>(null)
+  const navigate = useNavigate()
+  const [detailLocation, setDetailLocation] = useState<LocationResponse | null>(
+    null,
+  )
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
+    null,
+  )
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [deletingDestination, setDeletingDestination] =
     useState<TripDestinationResponse | null>(null)
+  const [updateTripOpen, setUpdateTripOpen] = useState(false)
+  const [deleteTripOpen, setDeleteTripOpen] = useState(false)
 
   const {
     data: trip,
@@ -252,9 +264,10 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
       })
       void queryClient.invalidateQueries({ queryKey: getUserTripsQueryKey() })
 
-      if (selectedLocation?.id === deletingDestination?.locationId) {
+      if (selectedLocationId === deletingDestination?.locationId) {
         setIsDetailOpen(false)
-        setSelectedLocation(null)
+        setSelectedLocationId(null)
+        setDetailLocation(null)
       }
 
       setDeletingDestination(null)
@@ -264,17 +277,38 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
     },
   })
 
+  const deleteTripMutation = useMutation({
+    ...deleteUserTripsByIdMutation(),
+    onSuccess: () => {
+      toast.success('Trip deleted')
+      void queryClient.invalidateQueries({ queryKey: getUserTripsQueryKey() })
+      setDeleteTripOpen(false)
+      void navigate({ to: '/trips' })
+    },
+    onError: () => {
+      toast.error('Unable to delete this trip.')
+    },
+  })
+
   function handleSelectLocation(location: LocationResponse) {
-    setSelectedLocation(location)
+    setDetailLocation(location)
+    setSelectedLocationId(location.id)
     setIsDetailOpen(true)
   }
 
   function handleCloseDetail() {
+    setSelectedLocationId(null)
     setIsDetailOpen(false)
   }
 
   function handleDetailClosed() {
-    setSelectedLocation(null)
+    setDetailLocation(null)
+  }
+
+  function handleConfirmDeleteTrip() {
+    deleteTripMutation.mutate({
+      path: { id: tripId },
+    })
   }
 
   function handleConfirmDelete() {
@@ -342,7 +376,13 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
           <TripDestinationsMap
             className="size-full"
             locations={locations}
-            selectedLocation={selectedLocation}
+            selectedLocation={
+              selectedLocationId
+                ? (locations.find(
+                    (location) => location.id === selectedLocationId,
+                  ) ?? null)
+                : null
+            }
             onSelectLocation={handleSelectLocation}
           />
         ) : (
@@ -357,28 +397,51 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
       <ResizableSplitPane
         left={
           <div className="space-y-6 p-4 lg:p-6">
-            <div className="space-y-2">
-              <Badge variant={tripStatusVariant(status)}>{status}</Badge>
-                <h1 className="text-2xl font-semibold tracking-tight">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Badge variant={tripStatusVariant(status)}>{status}</Badge>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setUpdateTripOpen(true)}
+                  >
+                    <PencilIcon />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => setDeleteTripOpen(true)}
+                  >
+                    <Trash2Icon />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-2xl font-semibold tracking-tight break-words">
                   {trip.name}
                 </h1>
                 <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <CalendarIcon className="size-3.5" />
+                  <CalendarIcon className="size-3.5 shrink-0" />
                   {formatTripDateRange(trip.startDate, trip.endDate)}
                 </p>
                 <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <MapPinIcon className="size-3.5" />
+                  <MapPinIcon className="size-3.5 shrink-0" />
                   {destinations.length}{' '}
                   {destinations.length === 1 ? 'destination' : 'destinations'}
                 </p>
-              {trip.notes ? (
-                <p className="text-sm text-muted-foreground">{trip.notes}</p>
-              ) : null}
+                {trip.notes ? (
+                  <p className="text-sm text-muted-foreground break-words">
+                    {trip.notes}
+                  </p>
+                ) : null}
+              </div>
             </div>
 
             <section className="space-y-3">
-              <h2 className="text-lg font-medium">Destinations</h2>
-
               {destinations.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No destinations added to this trip yet.
@@ -387,8 +450,11 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
                 <div className="space-y-6">
                   <div className="space-y-3">
                     <div>
-                      <h3 className="font-medium">Itinerary</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="flex items-center gap-2 font-medium">
+                        <CalendarDaysIcon className="size-4 text-muted-foreground" />
+                        Itinerary
+                      </h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
                         Stops scheduled by day
                       </p>
                     </div>
@@ -399,7 +465,7 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
                       tripId={tripId}
                       tripStartDate={trip.startDate}
                       tripEndDate={trip.endDate}
-                      selectedLocationId={selectedLocation?.id}
+                      selectedLocationId={selectedLocationId ?? undefined}
                       onSelectLocation={handleSelectLocation}
                       onDelete={setDeletingDestination}
                     />
@@ -408,8 +474,11 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
                   {unsortedDestinations.length > 0 ? (
                     <div className="space-y-3">
                       <div>
-                        <h3 className="font-medium">Unsorted</h3>
-                        <p className="text-sm text-muted-foreground">
+                        <h3 className="flex items-center gap-2 font-medium">
+                          <InboxIcon className="size-4 text-muted-foreground" />
+                          Unsorted
+                        </h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
                           Saved locations not yet placed on your itinerary
                         </p>
                       </div>
@@ -421,7 +490,7 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
                         tripId={tripId}
                         tripStartDate={trip.startDate}
                         tripEndDate={trip.endDate}
-                        selectedLocationId={selectedLocation?.id}
+                        selectedLocationId={selectedLocationId ?? undefined}
                         onSelectLocation={handleSelectLocation}
                         onDelete={setDeletingDestination}
                       />
@@ -433,9 +502,9 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
           </div>
         }
         right={
-          selectedLocation ? (
+          detailLocation ? (
             <MapLocationDetailPanel
-              location={selectedLocation}
+              location={detailLocation}
               open={isDetailOpen}
               onClose={handleCloseDetail}
               onClosed={handleDetailClosed}
@@ -451,6 +520,36 @@ export function TripDetailPage({ tripId }: TripDetailPageProps) {
           )
         }
       />
+
+      <UpdateTripDialog
+        trip={trip}
+        open={updateTripOpen}
+        onOpenChange={setUpdateTripOpen}
+      />
+
+      <Dialog open={deleteTripOpen} onOpenChange={setDeleteTripOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete trip</DialogTitle>
+            <DialogDescription>
+              This will remove &ldquo;{trip.name}&rdquo; from your trips. Your
+              saved locations will not be deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTripOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteTripMutation.isPending}
+              onClick={handleConfirmDeleteTrip}
+            >
+              Delete trip
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={deletingDestination != null}

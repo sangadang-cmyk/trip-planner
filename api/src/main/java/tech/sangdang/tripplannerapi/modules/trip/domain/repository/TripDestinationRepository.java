@@ -30,6 +30,7 @@ public interface TripDestinationRepository
       SELECT DISTINCT td.trip.id FROM TripDestinationEntity td
       WHERE td.location.id = :locationId
         AND td.deletedDate IS NULL
+        AND td.trip.deletedAt IS NULL
         AND td.trip.userId = :userId
       """)
   List<UUID> findTripIdsByLocationIdAndUserId(

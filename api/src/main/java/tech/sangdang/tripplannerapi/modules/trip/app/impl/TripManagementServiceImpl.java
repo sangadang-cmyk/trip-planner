@@ -1,5 +1,6 @@
 package tech.sangdang.tripplannerapi.modules.trip.app.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -16,6 +17,7 @@ import org.openapitools.model.TripResponse;
 import org.openapitools.model.UpdateTripDestinationRequest;
 import org.openapitools.model.UpdateTripRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tech.sangdang.tripplannerapi.common.core.BadRequestException;
 import tech.sangdang.tripplannerapi.common.core.NotFoundException;
 import tech.sangdang.tripplannerapi.modules.location.domain.LocationEntity;
@@ -32,6 +34,7 @@ import tech.sangdang.tripplannerapi.modules.trip.domain.repository.TripRepositor
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class TripManagementServiceImpl implements TripManagementService {
   private final TripRepository tripRepository;
   private final TripDestinationRepository tripDestinationRepository;
@@ -42,7 +45,7 @@ public class TripManagementServiceImpl implements TripManagementService {
 
   @Override
   public List<TripResponse> getTrips(UUID userId) {
-    List<TripEntity> trips = tripRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    List<TripEntity> trips = tripRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId);
     if (trips.isEmpty()) {
       return List.of();
     }
@@ -59,17 +62,21 @@ public class TripManagementServiceImpl implements TripManagementService {
   public TripResponse getTripById(UUID tripId, UUID userId) {
     TripEntity trip =
         tripRepository
-            .findByIdAndUserId(tripId, userId)
+            .findByIdAndUserIdAndDeletedAtIsNull(tripId, userId)
             .orElseThrow(() -> new NotFoundException("Trip not found"));
     return tripMapper.toResponse(trip);
   }
 
   @Override
+  @Transactional
   public TripResponse updateTrip(UUID tripId, UpdateTripRequest request, UUID userId) {
     TripEntity trip =
         tripRepository
-            .findByIdAndUserId(tripId, userId)
+            .findByIdAndUserIdAndDeletedAtIsNull(tripId, userId)
             .orElseThrow(() -> new NotFoundException("Trip not found"));
+
+    LocalDate previousStartDate = trip.getStartDate();
+    LocalDate previousEndDate = trip.getEndDate();
 
     if (request.getName() != null) {
       trip.setName(request.getName());
@@ -88,12 +95,46 @@ public class TripManagementServiceImpl implements TripManagementService {
       throw new BadRequestException("End date must be on or after start date");
     }
 
+    if (!previousStartDate.equals(trip.getStartDate())
+        || !previousEndDate.equals(trip.getEndDate())) {
+      List<TripDestinationEntity> destinationsToUpdate = new ArrayList<>();
+
+      for (TripDestinationEntity destination :
+          tripDestinationRepository.findActiveByTripIdOrdered(tripId)) {
+        LocalDate visitDate = destination.getVisitDate();
+        if (visitDate == null) {
+          continue;
+        }
+
+        if (visitDate.isBefore(trip.getStartDate()) || visitDate.isAfter(trip.getEndDate())) {
+          destination.setVisitDate(null);
+          destinationsToUpdate.add(destination);
+        }
+      }
+
+      if (!destinationsToUpdate.isEmpty()) {
+        tripDestinationRepository.saveAll(destinationsToUpdate);
+      }
+    }
+
     return tripMapper.toResponse(tripRepository.save(trip));
   }
 
   @Override
+  @Transactional
+  public void deleteTrip(UUID tripId, UUID userId) {
+    TripEntity trip =
+        tripRepository
+            .findByIdAndUserIdAndDeletedAtIsNull(tripId, userId)
+            .orElseThrow(() -> new NotFoundException("Trip not found"));
+
+    trip.setDeletedAt(LocalDateTime.now(ZoneOffset.UTC));
+    tripRepository.save(trip);
+  }
+
+  @Override
   public List<TripDestinationResponse> getTripDestinations(UUID tripId, UUID userId) {
-    if (tripRepository.findByIdAndUserId(tripId, userId).isEmpty()) {
+    if (tripRepository.findByIdAndUserIdAndDeletedAtIsNull(tripId, userId).isEmpty()) {
       throw new NotFoundException("Trip not found");
     }
     return tripDestinationRepository.findActiveByTripIdOrdered(tripId).stream()
@@ -102,11 +143,12 @@ public class TripManagementServiceImpl implements TripManagementService {
   }
 
   @Override
+  @Transactional
   public TripDestinationResponse createTripDestination(
       UUID tripId, CreateTripDestinationRequest request, UUID userId) {
     TripEntity trip =
         tripRepository
-            .findByIdAndUserId(tripId, userId)
+            .findByIdAndUserIdAndDeletedAtIsNull(tripId, userId)
             .orElseThrow(() -> new NotFoundException("Trip not found"));
 
     TripDestinationVisitDates.validateVisitDate(
@@ -146,14 +188,16 @@ public class TripManagementServiceImpl implements TripManagementService {
   }
 
   @Override
+  @Transactional
   public TripDestinationResponse updateTripDestination(
       UUID tripId,
       UUID destinationId,
       UpdateTripDestinationRequest request,
       UUID userId) {
-    if (tripRepository.findByIdAndUserId(tripId, userId).isEmpty()) {
-      throw new NotFoundException("Trip not found");
-    }
+    TripEntity trip =
+        tripRepository
+            .findByIdAndUserIdAndDeletedAtIsNull(tripId, userId)
+            .orElseThrow(() -> new NotFoundException("Trip not found"));
 
     TripDestinationEntity destination =
         tripDestinationRepository
@@ -164,9 +208,7 @@ public class TripManagementServiceImpl implements TripManagementService {
       LocalDate visitDate = request.getVisitDate().get();
       if (visitDate != null) {
         TripDestinationVisitDates.validateVisitDate(
-            visitDate,
-            destination.getTrip().getStartDate(),
-            destination.getTrip().getEndDate());
+            visitDate, trip.getStartDate(), trip.getEndDate());
       }
       destination.setVisitDate(visitDate);
     }
@@ -181,8 +223,9 @@ public class TripManagementServiceImpl implements TripManagementService {
   }
 
   @Override
+  @Transactional
   public void deleteTripDestination(UUID tripId, UUID destinationId, UUID userId) {
-    if (tripRepository.findByIdAndUserId(tripId, userId).isEmpty()) {
+    if (tripRepository.findByIdAndUserIdAndDeletedAtIsNull(tripId, userId).isEmpty()) {
       throw new NotFoundException("Trip not found");
     }
 
@@ -201,6 +244,7 @@ public class TripManagementServiceImpl implements TripManagementService {
   }
 
   @Override
+  @Transactional
   public TripResponse createTrip(CreateTripRequest request, UUID userId) {
     if (request.getEndDate().isBefore(request.getStartDate())) {
       throw new BadRequestException("End date must be on or after start date");

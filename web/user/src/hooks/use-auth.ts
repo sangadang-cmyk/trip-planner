@@ -1,4 +1,4 @@
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 
@@ -9,9 +9,13 @@ import {
   isAuthenticated,
   subscribeToAuthChanges,
 } from '@/lib/auth'
+import { buildLoginFrom } from '@/lib/login-redirect'
 
 export function useAuth() {
   const navigate = useNavigate()
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
   const authenticated = useSyncExternalStore(
     subscribeToAuthChanges,
     getAuthSnapshot,
@@ -29,7 +33,11 @@ export function useAuth() {
       return true
     }
 
-    void navigate({ to: '/login' })
+    const from = buildLoginFrom(pathname)
+    void navigate({
+      to: '/login',
+      search: from ? { from } : {},
+    })
     return false
   }
 

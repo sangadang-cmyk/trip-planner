@@ -24,6 +24,7 @@ import {
 } from '@/generated/api/@tanstack/react-query.gen'
 import type { LocationResponse, TripResponse } from '@/generated/api/types.gen'
 import { useAuth } from '@/hooks/use-auth'
+import { useLoginFromSearch } from '@/hooks/use-login-from-search'
 import { formatTripDateRange } from '@/lib/trip'
 import { cn } from '@/lib/utils'
 
@@ -35,10 +36,13 @@ type AddLocationToTripDialogProps = {
 }
 
 function AuthDialogContent({ onNavigate }: { onNavigate: () => void }) {
+  const loginSearch = useLoginFromSearch()
+
   return (
     <div className="flex flex-col gap-3">
       <Link
         to="/login"
+        search={loginSearch}
         onClick={onNavigate}
         className={cn(buttonVariants(), 'w-full')}
       >

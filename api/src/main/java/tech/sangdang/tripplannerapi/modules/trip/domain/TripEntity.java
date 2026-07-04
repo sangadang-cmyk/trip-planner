@@ -56,4 +56,7 @@ public class TripEntity {
 
   @Column(name = "notes", columnDefinition = "text")
   private String notes;
+
+  @Column(name = "deleted_at")
+  private LocalDateTime deletedAt;
 }

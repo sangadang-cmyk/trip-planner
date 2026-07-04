@@ -6,12 +6,20 @@ import type { LocationResponse } from '@/generated/api/types.gen'
 
 type MapFitBoundsProps = {
   locations: LocationResponse[]
+  selectedLocation?: LocationResponse | null
 }
 
-export function MapFitBounds({ locations }: MapFitBoundsProps) {
+export function MapFitBounds({
+  locations,
+  selectedLocation = null,
+}: MapFitBoundsProps) {
   const map = useMap()
 
   useEffect(() => {
+    if (selectedLocation) {
+      return
+    }
+
     const coordinates = locations.filter(
       (location) => location.latitude != null && location.longitude != null,
     )
@@ -33,7 +41,7 @@ export function MapFitBounds({ locations }: MapFitBoundsProps) {
     )
 
     map.fitBounds(bounds, { padding: [32, 32] })
-  }, [locations, map])
+  }, [locations, map, selectedLocation])
 
   return null
 }

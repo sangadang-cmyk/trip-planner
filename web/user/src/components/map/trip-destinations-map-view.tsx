@@ -39,7 +39,7 @@ export function TripDestinationsMapView({
         attributionControl={false}
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <MapFitBounds locations={locations} />
+        <MapFitBounds locations={locations} selectedLocation={selectedLocation} />
         <MapLocationLayer
           locations={locations}
           selectedId={selectedMarkerId}

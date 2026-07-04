@@ -9,7 +9,7 @@ import tech.sangdang.tripplannerapi.modules.trip.domain.TripEntity;
 
 @Repository
 public interface TripRepository extends JpaRepository<TripEntity, UUID> {
-  List<TripEntity> findByUserIdOrderByCreatedAtDesc(UUID userId);
+  List<TripEntity> findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(UUID userId);
 
-  Optional<TripEntity> findByIdAndUserId(UUID id, UUID userId);
+  Optional<TripEntity> findByIdAndUserIdAndDeletedAtIsNull(UUID id, UUID userId);
 }

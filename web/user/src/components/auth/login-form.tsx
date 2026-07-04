@@ -8,15 +8,18 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { postAuthUserLoginMutation } from '@/generated/api/@tanstack/react-query.gen'
 import { setAccessToken } from '@/lib/auth'
+import { sanitizeLoginRedirect } from '@/lib/login-redirect'
 
 type LoginFormProps = {
   initialEmail?: string
+  redirectTo?: string
   successMessage?: string | null
   onSuccess?: () => void
 }
 
 export function LoginForm({
   initialEmail = '',
+  redirectTo,
   successMessage = null,
   onSuccess,
 }: LoginFormProps) {
@@ -39,7 +42,7 @@ export function LoginForm({
         onSuccess()
         return
       }
-      void navigate({ to: '/' })
+      void navigate({ href: sanitizeLoginRedirect(redirectTo) })
     },
     onError: () => {
       toast.error('Invalid email or password. Please try again.')

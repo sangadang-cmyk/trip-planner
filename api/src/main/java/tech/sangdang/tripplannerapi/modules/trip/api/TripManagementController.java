@@ -43,6 +43,13 @@ public class TripManagementController implements TripManagementApi {
   }
 
   @Override
+  public ResponseEntity<Void> userTripsIdDelete(UUID id) {
+    AccountUserDetails userDetails = currentUser();
+    tripManagementService.deleteTrip(id, userDetails.getAccount().getId());
+    return ResponseEntity.noContent().build();
+  }
+
+  @Override
   public ResponseEntity<List<TripDestinationResponse>> userTripsTripIdDestinationsGet(
       UUID tripId) {
     AccountUserDetails userDetails = currentUser();

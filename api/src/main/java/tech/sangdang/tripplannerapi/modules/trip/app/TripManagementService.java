@@ -16,6 +16,8 @@ public interface TripManagementService {
 
   TripResponse updateTrip(UUID tripId, UpdateTripRequest request, UUID userId);
 
+  void deleteTrip(UUID tripId, UUID userId);
+
   List<TripDestinationResponse> getTripDestinations(UUID tripId, UUID userId);
 
   TripDestinationResponse createTripDestination(

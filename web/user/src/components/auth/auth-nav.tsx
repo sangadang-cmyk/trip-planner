@@ -16,13 +16,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/hooks/use-auth'
+import { useLoginFromSearch } from '@/hooks/use-login-from-search'
 
 export function AuthNav() {
   const { isAuthenticated, signOut } = useAuth()
+  const loginSearch = useLoginFromSearch()
 
   if (!isAuthenticated) {
     return (
-      <Button size="sm" variant="outline" render={<Link to="/login" />}>
+      <Button size="sm" variant="outline" render={<Link to="/login" search={loginSearch} />}>
         <LogInIcon />
         Sign in
       </Button>

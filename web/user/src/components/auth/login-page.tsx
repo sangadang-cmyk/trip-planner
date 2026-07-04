@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator'
 const loginRoute = getRouteApi('/login')
 
 export function LoginPage() {
-  const { email, verified } = loginRoute.useSearch()
+  const { email = '', verified = false, from } = loginRoute.useSearch()
   const successMessage = verified
     ? 'Your email is verified. Sign in to start planning your trip.'
     : null
@@ -24,7 +24,11 @@ export function LoginPage() {
             <p className="text-sm text-muted-foreground">Sign in to your account</p>
           </div>
 
-          <LoginForm initialEmail={email} successMessage={successMessage} />
+          <LoginForm
+            initialEmail={email}
+            redirectTo={from}
+            successMessage={successMessage}
+          />
 
           <div className="flex items-center gap-3">
             <Separator className="flex-1" />
