@@ -1,4 +1,4 @@
-package tech.sangdang.tripplannerapi.modules.location.app.mapper;
+package tech.sangdang.tripplannerapi.modules.location.infra.opentripmap;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;

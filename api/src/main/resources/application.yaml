@@ -41,3 +41,6 @@ app:
   opentripmap:
     api-key: ${OPENTRIPMAP_API_KEY:dummy-key}
     base-url: https://api.opentripmap.com/0.1
+  nominatim:
+    base-url: https://nominatim.openstreetmap.org
+    user-agent: TripPlanner/1.0

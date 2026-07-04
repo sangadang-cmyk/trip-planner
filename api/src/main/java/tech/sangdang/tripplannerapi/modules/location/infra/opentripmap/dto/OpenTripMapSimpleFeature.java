@@ -1,4 +1,4 @@
-package tech.sangdang.tripplannerapi.modules.location.domain.opentripmap;
+package tech.sangdang.tripplannerapi.modules.location.infra.opentripmap.dto;
 
 public record OpenTripMapSimpleFeature(
     String xid,

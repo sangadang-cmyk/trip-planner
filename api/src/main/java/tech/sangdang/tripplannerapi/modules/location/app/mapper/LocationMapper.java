@@ -4,9 +4,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import org.openapitools.model.LocationResponse;
 import org.springframework.stereotype.Component;
+import tech.sangdang.tripplannerapi.modules.location.domain.FetchedLocationSummary;
 import tech.sangdang.tripplannerapi.modules.location.domain.LocationEntity;
 import tech.sangdang.tripplannerapi.modules.location.domain.LocationSource;
-import tech.sangdang.tripplannerapi.modules.location.domain.opentripmap.OpenTripMapSimpleFeature;
 
 @Component
 public class LocationMapper {
@@ -26,15 +26,15 @@ public class LocationMapper {
         .build();
   }
 
-  public LocationResponse fromOpenTripMapFeature(OpenTripMapSimpleFeature place) {
+  public LocationResponse fromFetchedLocationSummary(FetchedLocationSummary place) {
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     return LocationResponse.builder()
         .name(place.name())
-        .latitude(place.point() != null ? place.point().lat() : null)
-        .longitude(place.point() != null ? place.point().lon() : null)
+        .latitude(place.latitude())
+        .longitude(place.longitude())
         .popularity(0)
         .source(LocationResponse.SourceEnum.fromValue(LocationSource.OPENTRIPMAPS.name()))
-        .googleMapsId(place.xid())
+        .googleMapsId(place.sourceId())
         .createdAt(now)
         .updatedAt(now)
         .build();

@@ -7,13 +7,13 @@ import org.openapitools.model.LocationDetailsResponse;
 import org.springframework.stereotype.Service;
 import tech.sangdang.tripplannerapi.common.core.NotFoundException;
 import tech.sangdang.tripplannerapi.modules.location.app.LocationDetailsService;
+import tech.sangdang.tripplannerapi.modules.location.app.mapper.FetchedLocationDetailsMapper;
 import tech.sangdang.tripplannerapi.modules.location.app.mapper.LocationDetailsMapper;
-import tech.sangdang.tripplannerapi.modules.location.app.mapper.OpenTripMapPlaceMapper;
+import tech.sangdang.tripplannerapi.modules.location.domain.FetchedLocationDetails;
 import tech.sangdang.tripplannerapi.modules.location.domain.LocationDetailsEntity;
 import tech.sangdang.tripplannerapi.modules.location.domain.LocationEntity;
 import tech.sangdang.tripplannerapi.modules.location.domain.LocationSource;
 import tech.sangdang.tripplannerapi.modules.location.domain.exception.LocationFetchException;
-import tech.sangdang.tripplannerapi.modules.location.domain.opentripmap.OpenTripMapPlace;
 import tech.sangdang.tripplannerapi.modules.location.domain.port.LocationFetchPort;
 import tech.sangdang.tripplannerapi.modules.location.domain.repository.LocationDetailsRepository;
 import tech.sangdang.tripplannerapi.modules.location.domain.repository.LocationRepository;
@@ -26,7 +26,7 @@ public class LocationDetailsServiceImpl implements LocationDetailsService {
   private final LocationDetailsRepository locationDetailsRepository;
   private final LocationFetchPort locationFetchPort;
   private final LocationDetailsMapper locationDetailsMapper;
-  private final OpenTripMapPlaceMapper openTripMapPlaceMapper;
+  private final FetchedLocationDetailsMapper fetchedLocationDetailsMapper;
 
   @Override
   public LocationDetailsResponse getLocationDetailsById(UUID id) {
@@ -68,17 +68,17 @@ public class LocationDetailsServiceImpl implements LocationDetailsService {
         sourceId);
 
     try {
-      OpenTripMapPlace place =
+      FetchedLocationDetails details =
           locationFetchPort
-              .fetchPlaceByXid(sourceId)
+              .fetchLocationDetailsBySourceId(sourceId)
               .orElseThrow(() -> new NotFoundException("Location details not found"));
 
-      LocationDetailsEntity details =
+      LocationDetailsEntity detailsEntity =
           locationDetailsRepository.save(
-              openTripMapPlaceMapper.toEntity(place, location.getId()));
+              fetchedLocationDetailsMapper.toEntity(details, location.getId()));
 
       log.info("Cached location details for location id={}", location.getId());
-      return locationDetailsMapper.toResponse(details);
+      return locationDetailsMapper.toResponse(detailsEntity);
     } catch (NotFoundException ex) {
       throw ex;
     } catch (Exception ex) {

@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.openapitools.model.CreateManualLocationRequest;
 import org.openapitools.model.LocationResponse;
 import org.openapitools.model.PaginatedLocationsResponse;
-import tech.sangdang.tripplannerapi.modules.location.domain.opentripmap.OpenTripMapSimpleFeature;
+import tech.sangdang.tripplannerapi.modules.location.domain.FetchedLocationSummary;
 
 public interface LocationManagementService {
   PaginatedLocationsResponse getLocations(int page, int size);
@@ -14,5 +14,5 @@ public interface LocationManagementService {
 
   LocationResponse createManualLocation(CreateManualLocationRequest request, UUID addedBy);
 
-  void cacheOpenTripMapLocations(List<OpenTripMapSimpleFeature> places);
+  void cacheFetchedLocations(List<FetchedLocationSummary> places);
 }

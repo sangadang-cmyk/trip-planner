@@ -1,4 +1,4 @@
-package tech.sangdang.tripplannerapi.modules.location.infra;
+package tech.sangdang.tripplannerapi.modules.location.infra.opentripmap;
 
 import java.util.Collections;
 import java.util.List;
@@ -9,9 +9,11 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import tech.sangdang.tripplannerapi.config.properties.OpenTripMapProperties;
-import tech.sangdang.tripplannerapi.modules.location.domain.opentripmap.OpenTripMapPlace;
-import tech.sangdang.tripplannerapi.modules.location.domain.opentripmap.OpenTripMapSimpleFeature;
+import tech.sangdang.tripplannerapi.modules.location.domain.FetchedLocationDetails;
+import tech.sangdang.tripplannerapi.modules.location.domain.FetchedLocationSummary;
 import tech.sangdang.tripplannerapi.modules.location.domain.port.LocationFetchPort;
+import tech.sangdang.tripplannerapi.modules.location.infra.opentripmap.dto.OpenTripMapPlace;
+import tech.sangdang.tripplannerapi.modules.location.infra.opentripmap.dto.OpenTripMapSimpleFeature;
 
 @Slf4j
 @Component
@@ -25,9 +27,10 @@ public class OpenTripMapProvider implements LocationFetchPort {
 
   private final RestClient openTripMapRestClient;
   private final OpenTripMapProperties openTripMapProperties;
+  private final OpenTripMapLocationMapper openTripMapLocationMapper;
 
   @Override
-  public List<OpenTripMapSimpleFeature> fetchLocationsByBoundingBox(
+  public List<FetchedLocationSummary> fetchLocationsByBoundingBox(
       double minLat, double maxLat, double minLng, double maxLng, int limit) {
     log.trace(
         "Calling OpenTripMap places/bbox with lang={}, minLat={}, maxLat={}, minLng={}, maxLng={}, limit={}",
@@ -75,13 +78,13 @@ public class OpenTripMapProvider implements LocationFetchPort {
 
     log.debug("OpenTripMap places/bbox returned {} place(s)", places.size());
     log.info("Successfully fetched {} place(s) from OpenTripMap", places.size());
-    return places;
+    return places.stream().map(openTripMapLocationMapper::toSummary).toList();
   }
 
   @Override
-  public Optional<OpenTripMapPlace> fetchPlaceByXid(String xid) {
-    log.trace("Calling OpenTripMap places/xid with lang={}, xid={}", LANGUAGE, xid);
-    log.info("Fetching place details from OpenTripMap for xid={}", xid);
+  public Optional<FetchedLocationDetails> fetchLocationDetailsBySourceId(String sourceId) {
+    log.trace("Calling OpenTripMap places/xid with lang={}, xid={}", LANGUAGE, sourceId);
+    log.info("Fetching place details from OpenTripMap for xid={}", sourceId);
 
     Optional<OpenTripMapPlace> place =
         openTripMapRestClient
@@ -91,11 +94,11 @@ public class OpenTripMapProvider implements LocationFetchPort {
                     uriBuilder
                         .path("/{lang}/places/xid/{xid}")
                         .queryParam("apikey", openTripMapProperties.apiKey())
-                        .build(LANGUAGE, xid))
+                        .build(LANGUAGE, sourceId))
             .exchange(
                 (request, response) -> {
                   if (response.getStatusCode().value() == 404) {
-                    log.info("OpenTripMap place not found for xid={}", xid);
+                    log.info("OpenTripMap place not found for xid={}", sourceId);
                     return Optional.empty();
                   }
 
@@ -109,11 +112,11 @@ public class OpenTripMapProvider implements LocationFetchPort {
                 });
 
     if (place.isEmpty()) {
-      log.warn("OpenTripMap returned no place details for xid={}", xid);
-    } else {
-      log.info("Successfully fetched place details from OpenTripMap for xid={}", xid);
+      log.warn("OpenTripMap returned no place details for xid={}", sourceId);
+      return Optional.empty();
     }
 
-    return place;
+    log.info("Successfully fetched place details from OpenTripMap for xid={}", sourceId);
+    return place.map(openTripMapLocationMapper::toDetails);
   }
 }

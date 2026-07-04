@@ -1,4 +1,4 @@
-package tech.sangdang.tripplannerapi.modules.location.domain.opentripmap;
+package tech.sangdang.tripplannerapi.modules.location.infra.opentripmap.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

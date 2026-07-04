@@ -10,9 +10,9 @@ import org.springframework.stereotype.Service;
 import tech.sangdang.tripplannerapi.modules.location.app.LocationManagementService;
 import tech.sangdang.tripplannerapi.modules.location.app.LocationService;
 import tech.sangdang.tripplannerapi.modules.location.app.mapper.LocationMapper;
+import tech.sangdang.tripplannerapi.modules.location.domain.FetchedLocationSummary;
 import tech.sangdang.tripplannerapi.modules.location.domain.OpenTripMapRequestEntity;
 import tech.sangdang.tripplannerapi.modules.location.domain.exception.LocationFetchException;
-import tech.sangdang.tripplannerapi.modules.location.domain.opentripmap.OpenTripMapSimpleFeature;
 import tech.sangdang.tripplannerapi.modules.location.domain.port.LocationFetchPort;
 import tech.sangdang.tripplannerapi.modules.location.domain.repository.LocationRepository;
 import tech.sangdang.tripplannerapi.modules.location.domain.repository.OpenTripMapRequestRepository;
@@ -87,7 +87,7 @@ public class LocationServiceImpl implements LocationService {
     log.info("No overlapping OpenTripMap cache found, calling OpenTripMap API");
 
     try {
-      List<OpenTripMapSimpleFeature> places =
+      List<FetchedLocationSummary> places =
           locationFetchPort.fetchLocationsByBoundingBox(
               boundingBoxRequest.getMinLat(),
               boundingBoxRequest.getMaxLat(),
@@ -104,11 +104,11 @@ public class LocationServiceImpl implements LocationService {
         return List.of();
       }
 
-      locationManagementService.cacheOpenTripMapLocations(places);
+      locationManagementService.cacheFetchedLocations(places);
       log.info(
           "Returning {} locations from OpenTripMap and queued async database cache",
           places.size());
-      return places.stream().map(locationMapper::fromOpenTripMapFeature).toList();
+      return places.stream().map(locationMapper::fromFetchedLocationSummary).toList();
     } catch (Exception ex) {
       log.warn(
           "Failed to fetch locations from OpenTripMap for bounding box minLat={}, maxLat={}, minLng={}, maxLng={}",
@@ -133,7 +133,7 @@ public class LocationServiceImpl implements LocationService {
       return List.of();
     }
 
-    List<OpenTripMapSimpleFeature> cachedPlaces = openTripMapResponseMapper.fromJson(response);
+    List<FetchedLocationSummary> cachedPlaces = openTripMapResponseMapper.fromCachedJson(response);
     log.debug(
         "Cached OpenTripMap request id={} contains {} place(s)",
         cachedRequest.getId(),
@@ -146,12 +146,12 @@ public class LocationServiceImpl implements LocationService {
       return List.of();
     }
 
-    locationManagementService.cacheOpenTripMapLocations(cachedPlaces);
+    locationManagementService.cacheFetchedLocations(cachedPlaces);
     log.info(
         "Returning {} locations from cached OpenTripMap request id={}",
         cachedPlaces.size(),
         cachedRequest.getId());
-    return cachedPlaces.stream().map(locationMapper::fromOpenTripMapFeature).toList();
+    return cachedPlaces.stream().map(locationMapper::fromFetchedLocationSummary).toList();
   }
 
   private void saveOpenTripMapRequest(BoundingBoxRequest boundingBoxRequest, String response) {

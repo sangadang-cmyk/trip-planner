@@ -2,12 +2,12 @@ package tech.sangdang.tripplannerapi.modules.location.domain.port;
 
 import java.util.List;
 import java.util.Optional;
-import tech.sangdang.tripplannerapi.modules.location.domain.opentripmap.OpenTripMapPlace;
-import tech.sangdang.tripplannerapi.modules.location.domain.opentripmap.OpenTripMapSimpleFeature;
+import tech.sangdang.tripplannerapi.modules.location.domain.FetchedLocationDetails;
+import tech.sangdang.tripplannerapi.modules.location.domain.FetchedLocationSummary;
 
 public interface LocationFetchPort {
-  List<OpenTripMapSimpleFeature> fetchLocationsByBoundingBox(
+  List<FetchedLocationSummary> fetchLocationsByBoundingBox(
       double minLat, double maxLat, double minLng, double maxLng, int limit);
 
-  Optional<OpenTripMapPlace> fetchPlaceByXid(String xid);
+  Optional<FetchedLocationDetails> fetchLocationDetailsBySourceId(String sourceId);
 }

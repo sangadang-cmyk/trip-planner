@@ -251,6 +251,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /geolocation/search:
+    get:
+      summary: Search countries and cities
+      tags:
+        - Geolocation
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query forwarded to Nominatim
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: Matching countries and cities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GeolocationSearchResult'
+        '400':
+          description: Invalid search query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /admin/countries:
     get:
       summary: List all countries (paginated)
@@ -1810,3 +1838,17 @@ components:
           format: date-time
         status:
           type: integer
+
+    GeolocationSearchResult:
+      type: object
+      required:
+        - name
+        - addressType
+      properties:
+        name:
+          type: string
+        addressType:
+          type: string
+          enum:
+            - country
+            - city

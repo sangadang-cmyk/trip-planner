@@ -14,9 +14,9 @@ import org.springframework.stereotype.Service;
 import tech.sangdang.tripplannerapi.common.core.NotFoundException;
 import tech.sangdang.tripplannerapi.modules.location.app.LocationManagementService;
 import tech.sangdang.tripplannerapi.modules.location.app.mapper.LocationMapper;
+import tech.sangdang.tripplannerapi.modules.location.domain.FetchedLocationSummary;
 import tech.sangdang.tripplannerapi.modules.location.domain.LocationEntity;
 import tech.sangdang.tripplannerapi.modules.location.domain.LocationSource;
-import tech.sangdang.tripplannerapi.modules.location.domain.opentripmap.OpenTripMapSimpleFeature;
 import tech.sangdang.tripplannerapi.modules.location.domain.repository.LocationRepository;
 
 @Service
@@ -65,23 +65,23 @@ public class LocationManagementServiceImpl implements LocationManagementService 
 
   @Async
   @Override
-  public void cacheOpenTripMapLocations(List<OpenTripMapSimpleFeature> places) {
-    for (OpenTripMapSimpleFeature place : places) {
-      if (locationRepository.existsBySourceId(place.xid())) {
+  public void cacheFetchedLocations(List<FetchedLocationSummary> places) {
+    for (FetchedLocationSummary place : places) {
+      if (locationRepository.existsBySourceId(place.sourceId())) {
         continue;
       }
       locationRepository.save(toEntity(place));
     }
   }
 
-  private LocationEntity toEntity(OpenTripMapSimpleFeature place) {
+  private LocationEntity toEntity(FetchedLocationSummary place) {
     return LocationEntity.builder()
         .name(place.name())
-        .latitude(place.point() != null ? place.point().lat() : null)
-        .longitude(place.point() != null ? place.point().lon() : null)
+        .latitude(place.latitude())
+        .longitude(place.longitude())
         .popularity(0)
         .source(LocationSource.OPENTRIPMAPS)
-        .sourceId(place.xid())
+        .sourceId(place.sourceId())
         .build();
   }
 }
