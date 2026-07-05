@@ -8,6 +8,12 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
-  profile = "default"
+  region  = "us-east-1"
+  default_tags {
+    tags = {
+      "project" : var.project
+      "environment": var.environment
+      "region": var.region
+    }
+  }
 }
