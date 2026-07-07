@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: api
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:mydb}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:password}
+  config:
+    import: optional:file:.env[.properties]
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+server:
+  port: ${SERVER_PORT:8080}
+
+logging:
+  level:
+    tech.sangdang.tripplannerapi.config.RestClientLoggingInterceptor: DEBUG
+
+app:
+  auth:
+    pending-registration:
+      expiration: 30m
+      cleanup-cron: "0 0 */12 * * *"
+      resend-allowed-before-expiry: 10s
+      resend-grace-after-expiry: 10m
+  security:
+    jwt:
+      secret: ${ACCESS_TOKEN_SECRET}
+  mail:
+    gmail:
+      username: ${GMAIL_USERNAME}
+      app-password: ${GMAIL_APP_PASSWORD}
+      from: ${GMAIL_FROM}
+  opentripmap:
+    api-key: ${OPENTRIPMAP_API_KEY:dummy-key}
+    base-url: https://api.opentripmap.com/0.1
+  nominatim:
+    base-url: https://nominatim.openstreetmap.org
+    user-agent: TripPlanner/1.0
