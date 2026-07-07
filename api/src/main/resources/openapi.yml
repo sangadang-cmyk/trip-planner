@@ -1,0 +1,1453 @@
+openapi: 3.0.0
+info:
+  title: Authentication API
+  version: 1.0.0
+  description: Auth endpoints for trip planning app
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: https://api.example.com
+    description: Production server
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Registration started, verification email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          description: Invalid input or verified account already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/verify-email:
+    post:
+      summary: Verify email with code
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequest'
+      responses:
+        '200':
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '400':
+          description: Invalid or expired code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/user/login:
+    post:
+      summary: Login as a user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: refreshToken=xyz; HttpOnly; Path=/; Max-Age=604800
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Account is not a user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/admin/login:
+    post:
+      summary: Login as an admin
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: refreshToken=xyz; HttpOnly; Path=/; Max-Age=604800
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Account is not an admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      tags:
+        - Authentication
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      responses:
+        '200':
+          description: New access token generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '401':
+          description: Refresh token invalid or expired
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid or expired refresh token
+
+  /admin/accounts:
+    get:
+      summary: List all accounts (paginated)
+      tags:
+        - Account Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Zero-based page index
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          description: Number of accounts per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Paginated list of accounts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAccountsResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /admin/accounts/{id}:
+    get:
+      summary: Get account details by ID
+      tags:
+        - Account Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Account details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /geolocation/search:
+    get:
+      summary: Search countries and cities
+      tags:
+        - Geolocation
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query forwarded to Nominatim
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: Matching countries and cities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GeolocationSearchResult'
+        '400':
+          description: Invalid search query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /geolocation/polygon:
+    get:
+      summary: Get polygon GeoJSON for a cached OSM place
+      tags:
+        - Geolocation
+      parameters:
+        - name: osmId
+          in: query
+          required: true
+          description: OpenStreetMap id stored for a cached country or city
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Polygon GeoJSON from Nominatim
+          content:
+            application/geo+json:
+              schema:
+                type: string
+        '404':
+          description: Cached place or polygon not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /admin/locations:
+    get:
+      summary: List all locations (paginated)
+      tags:
+        - Location Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Zero-based page index
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          description: Number of locations per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Paginated list of locations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLocationsResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /admin/locations/{id}:
+    get:
+      summary: Get location by ID
+      tags:
+        - Location Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Location details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Location not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /admin/locations/manual:
+    post:
+      summary: Create a manual location
+      tags:
+        - Location Management
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateManualLocationRequest'
+      responses:
+        '201':
+          description: Location created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: City or country not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/locations/{id}:
+    get:
+      summary: Get location by ID
+      tags:
+        - Locations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Location not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/locations/details/{id}:
+    get:
+      summary: Get location details by ID
+      tags:
+        - Locations
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Location details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationDetailsResponse'
+        '404':
+          description: Location details not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/locations/bounding-box:
+    post:
+      summary: Fetch locations within a bounding box
+      tags:
+        - Locations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoundingBoxRequest'
+      responses:
+        '200':
+          description: Locations within the bounding box
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocationResponse'
+        '400':
+          description: Invalid bounding box
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/trips:
+    get:
+      summary: List all trips for the current user
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of trips owned by the current user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a trip
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTripRequest'
+      responses:
+        '201':
+          description: Trip created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/trips/by-location/{locationId}:
+    get:
+      summary: List trip IDs that contain a location
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: locationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Trip IDs for the current user that contain the location
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/trips/{id}:
+    get:
+      summary: Get a trip by ID
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Trip details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a trip
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTripRequest'
+      responses:
+        '200':
+          description: Trip updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a trip
+      description: Soft-deletes the trip by setting deletedAt. The trip and its destinations remain in the database but are no longer returned by the API.
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Trip deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/trips/{tripId}/destinations:
+    get:
+      summary: List destinations for a trip
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of destinations for the trip
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripDestinationResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Add a destination to a trip
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTripDestinationRequest'
+      responses:
+        '201':
+          description: Trip destination created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripDestinationResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trip or location not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/trips/{tripId}/destinations/{destinationId}:
+    put:
+      summary: Update a trip destination
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: destinationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTripDestinationRequest'
+      responses:
+        '200':
+          description: Trip destination updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripDestinationResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trip or destination not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a trip destination
+      tags:
+        - Trip Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: destinationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Trip destination deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — user role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trip or destination not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /private/account/me:
+    get:
+      summary: Get current authenticated account
+      tags:
+        - Account Management
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current account details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /auth/resend-verification:
+    post:
+      summary: Resend verification email
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendVerificationRequest'
+      responses:
+        '200':
+          description: Verification email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendVerificationResponse'
+        '400':
+          description: Invalid request, pending registration not found, or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Too many requests, please wait before resending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token from login endpoints. Required for /admin/** (ADMIN role) and /private/** (authenticated).
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+          example: danganhsang09@gmail.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: "123123123"
+        name:
+          type: string
+          example: John Doe
+
+    RegisterResponse:
+      type: object
+      required:
+        - challenge
+      properties:
+        challenge:
+          type: string
+          example: 7f3c9a2e1b4d6f8a0c2e4b6d8f0a1c3e
+
+    VerifyEmailRequest:
+      type: object
+      required:
+        - email
+        - verificationCode
+        - challenge
+      properties:
+        email:
+          type: string
+          format: email
+          example: danganhsang09@gmail.com
+        verificationCode:
+          type: string
+          example: ABC12
+        challenge:
+          type: string
+          example: 7f3c9a2e1b4d6f8a0c2e4b6d8f0a1c3e
+
+    ResendVerificationRequest:
+      type: object
+      required:
+        - email
+        - challenge
+      properties:
+        email:
+          type: string
+          format: email
+          example: danganhsang09@gmail.com
+        challenge:
+          type: string
+          example: 7f3c9a2e1b4d6f8a0c2e4b6d8f0a1c3e
+
+    ResendVerificationResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: Verification email sent
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: danganhsang09@gmail.com
+        password:
+          type: string
+          format: password
+          example: "123123123"
+
+    LoginResponse:
+      type: object
+      required:
+        - accessToken
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        refreshToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    AccountResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+          enum: [USER, ADMIN]
+        createdAt:
+          type: string
+          format: date-time
+
+    PaginatedAccountsResponse:
+      type: object
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountResponse'
+        page:
+          type: integer
+          example: 0
+        size:
+          type: integer
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          example: 42
+        totalPages:
+          type: integer
+          example: 3
+
+    PaginatedLocationsResponse:
+      type: object
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationResponse'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    LocationDetailsResponse:
+      type: object
+      required:
+        - id
+        - images
+        - previewImages
+        - kinds
+        - description
+        - popularity
+        - source
+      properties:
+        id:
+          type: string
+          format: uuid
+        images:
+          type: array
+          items:
+            type: string
+        previewImages:
+          type: array
+          items:
+            type: string
+        kinds:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        popularity:
+          type: integer
+        country:
+          type: string
+        state:
+          type: string
+        source:
+          type: string
+
+    LocationResponse:
+      type: object
+      required:
+        - id
+        - name
+        - popularity
+        - source
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        popularity:
+          type: integer
+        source:
+          type: string
+          enum: [OPENTRIPMAPS, MANUAL]
+        googleMapsId:
+          type: string
+        addedBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateManualLocationRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        popularity:
+          type: integer
+
+    BoundingBoxRequest:
+      type: object
+      required:
+        - minLat
+        - maxLat
+        - minLng
+        - maxLng
+      properties:
+        minLat:
+          type: number
+          format: double
+        maxLat:
+          type: number
+          format: double
+        minLng:
+          type: number
+          format: double
+        maxLng:
+          type: number
+          format: double
+
+    CreateTripRequest:
+      type: object
+      required:
+        - name
+        - startDate
+        - endDate
+      properties:
+        name:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        notes:
+          type: string
+
+    UpdateTripRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        notes:
+          type: string
+
+    TripResponse:
+      type: object
+      required:
+        - id
+        - userId
+        - name
+        - startDate
+        - endDate
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        notes:
+          type: string
+        thumbnail:
+          type: string
+          format: uri
+          description: >
+            Thumbnail URL derived from the first trip destination that has image
+            details. Null when the trip has no destinations or none have images.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateTripDestinationRequest:
+      type: object
+      required:
+        - locationId
+        - sortOrder
+      properties:
+        locationId:
+          type: string
+          format: uuid
+        visitDate:
+          type: string
+          format: date
+          nullable: true
+          description: >
+            Date this destination is scheduled for. Omit or set null for unsorted destinations.
+        sortOrder:
+          type: integer
+          minimum: 0
+        notes:
+          type: string
+
+    UpdateTripDestinationRequest:
+      type: object
+      properties:
+        visitDate:
+          type: string
+          format: date
+          nullable: true
+          description: >
+            Date this destination is scheduled for. Set null to mark as unsorted.
+        sortOrder:
+          type: integer
+          minimum: 0
+        notes:
+          type: string
+
+    TripDestinationResponse:
+      type: object
+      required:
+        - id
+        - tripId
+        - locationId
+        - sortOrder
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        tripId:
+          type: string
+          format: uuid
+        locationId:
+          type: string
+          format: uuid
+        visitDate:
+          type: string
+          format: date
+          nullable: true
+          description: Null when the destination is not assigned to a date yet.
+        sortOrder:
+          type: integer
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+
+    GeolocationSearchResult:
+      type: object
+      required:
+        - osmId
+        - name
+        - addressType
+      properties:
+        osmId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        addressType:
+          type: string
+          enum:
+            - country
+            - city
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double

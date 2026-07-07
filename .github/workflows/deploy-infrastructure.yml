@@ -1,0 +1,51 @@
+name: Deploy Infrastructure
+
+on:
+  push:
+    tags:
+      - "dev-infra-*"
+    paths:
+      - "infrastructure"
+  workflow_dispatch:
+
+jobs:
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: ./infrastructure
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4.0.1
+
+        # this should log me into AWS using the GitHubActions_TripPlanner role
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6.2.1
+        with:
+          role-to-assume: ${{ vars.ACTIONS_ROLE }}
+          aws-region: ${{ vars.REGION }}
+          audience: 'sts.amazonaws.com'
+
+      - name: Init Terraform
+        run: |
+          terraform init
+
+      - name: Plan Terraform (Update)
+        run: |
+          terraform plan -out=tfplan
+
+      - name: Upload `tfplan` to Artifacts
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: 'Terraform Plan File'
+          path: tfplan
+          archive: false
+          if-no-files-found: 'warn'
+          retention-days: 7
